@@ -56,7 +56,7 @@ def main() -> None:
             print(error.message)
         activity = discord.Activity(
             type=discord.ActivityType.watching,
-            name='на еблю твоей мамки'
+            name='test'
         )
         await bot.change_presence(activity=activity)
 
