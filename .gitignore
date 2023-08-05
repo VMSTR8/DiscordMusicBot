@@ -1,0 +1,13 @@
+# Trash
+**/__pycache__/
+**/.DS_Store
+**temp/
+.idea/
+.vscode/
+
+# Enviroments
+.venv/
+.env
+
+# Docker
+docker-compose.yml
