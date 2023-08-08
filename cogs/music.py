@@ -128,6 +128,7 @@ class MusicCog(commands.Cog):
         name='play',
         description='Воспроизведение/добавление в очередь музыки из YouTube',
     )
+    @app_commands.describe(song='Напиши название песни. Ссылки недопустимы!')
     @play_check()
     async def play(self, interaction: Interaction, *, song: str) -> None:
 
@@ -290,6 +291,7 @@ class MusicCog(commands.Cog):
         description='Изменить громкость '
         'воспроизведения музыки (от 0% до 100%)',
     )
+    @app_commands.describe(volume='Введи число от 0 до 100')
     @voice_channel_check()
     async def volume(self, interaction: Interaction, volume: int) -> None:
 
