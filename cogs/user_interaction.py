@@ -1,5 +1,16 @@
+import aiohttp
+
+import re
+
+import random
+
+from typing import Union
+
+import discord
 from discord import app_commands, Interaction
 from discord.ext import commands
+
+from settings.settings import DISCORD_VOICE_CHANNELS_ID
 
 
 class UserInteractionCog(commands.Cog):
@@ -7,6 +18,28 @@ class UserInteractionCog(commands.Cog):
     def __init__(self, bot: commands.Bot) -> None:
 
         self.bot = bot
+        self.shikimore_chars = re.compile(
+            r'''
+            https://shikimori\.(me|one)
+            /characters/
+            (\w+)-
+            ''',
+            re.X
+        )
+
+    async def is_role_exist(
+            self,
+            interaction: Interaction,
+            role: str
+    ) -> Union[None, str]:
+        return discord.utils.get(interaction.guild.roles, name=role.lower())
+
+    async def is_character_exit(self, character_id: int) -> bool:
+        async with aiohttp.ClientSession() as session:
+            async with session.get(
+                f"https://shikimori.one/api/characters/{character_id}"
+            ) as response:
+                return response.status == 200
 
     @commands.Cog.listener()
     async def on_member_join(self, member) -> None:
@@ -21,11 +54,81 @@ class UserInteractionCog(commands.Cog):
         role='Напиши название своей роли, '
         'которую я создам и присвою тебе',
         shikimori_urls='Ссылки на 5 вайфу с сайта '
-        'shikimori.me через запятую. Первой всегда идет твоя самая-самая!'
+        'shikimori.me через запятую'
     )
     async def grant_permission(
             self,
             interaction: Interaction,
             role: str,
+            *,
             shikimori_urls: str) -> None:
-        pass
+        await interaction.response.defer()
+
+        existing_role = await self.is_role_exist(interaction, role)
+        if existing_role:
+            await interaction.followup.send(
+                f'Роль **{role}** уже существует на сервере!',
+            )
+            return
+
+        urls = [url.strip() for url in shikimori_urls.split(',')]
+        if len(urls) != 5:
+            await interaction.followup.send(
+                '**Baaaka!** Тебе же было сказано, '
+                'отправь 5 ссылок, ни больше ни меньше!',
+            )
+            return
+
+        valid_urls = []
+        for url in urls:
+            if re.search(self.shikimore_chars, url):
+                valid_urls.append(url)
+            else:
+                await interaction.followup.send(
+                    f'*Надулась*\n\n{url}, вот это похоже на '
+                    'ссылку на персонажа с сайта Shikimori?',
+                )
+                return
+
+        valid_characters_id = []
+        for url in valid_urls:
+            character_id = re.search(self.shikimore_chars, url).group(2)
+            try:
+                character_exists = await self.is_character_exit(character_id)
+            except Exception:
+                await interaction.followup.send(
+                    'Что-то пошло не так :( Извини... я все напортачила. '
+                    'Надеюсь, ты не сердишься на меня... Попробуй еще раз!'
+                )
+            if not character_exists:
+                await interaction.followup.send(
+                    f'Персонаж по ссылке {url} не найден на Shikimori. '
+                    'Повтори команду, введя корректные ссылки!',
+                )
+                return
+            valid_characters_id.append(character_id)
+
+        new_role = await interaction.guild.create_role(
+            name=role.lower(),
+            color=discord.Color(random.randint(0, 0xFFFFFF))
+        )
+
+        await interaction.user.add_roles(new_role)
+
+        voice_channels_id = DISCORD_VOICE_CHANNELS_ID.split(',')
+
+        for voice_channel_id in voice_channels_id:
+            voice_channel = interaction.guild.get_channel(
+                int(voice_channel_id))
+            await voice_channel.set_permissions(
+                new_role,
+                view_channel=True,
+                connect=True,
+                speak=True
+            )
+
+        await interaction.followup.send(
+            f'Не то, чтобы мне до тебя было какое-то дело, но...\n'
+            f'Я создала роль **{role.capitalize()}** для тебя и выдала '
+            f'доступы во все голосовые каналы.'
+        )
