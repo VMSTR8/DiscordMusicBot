@@ -5,7 +5,12 @@ from discord.ext import commands
 
 import wavelink
 
+from tortoise import run_async
+
+from database.init import init
+
 from cogs.music import MusicCog
+from cogs.user_interaction import UserInteractionCog
 
 from settings.settings import (
     BOT_TOKEN,
@@ -40,13 +45,15 @@ async def connect_nodes() -> None:
 
 async def setup_bot(bot: commands.Bot) -> None:
     await bot.add_cog(MusicCog(bot=bot))
+    await bot.add_cog(UserInteractionCog(bot=bot))
 
 
 def main() -> None:
-
+    
+    run_async(init())
+    
     @bot.event
     async def on_ready() -> None:
-
         print(f'Logged in as {bot.user}')
         synced = await bot.tree.sync()
         await connect_nodes()

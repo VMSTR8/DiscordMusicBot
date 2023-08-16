@@ -12,6 +12,8 @@ BOT_TOKEN = os.environ.get('BOT_TOKEN')
 WAVELINK_URI = os.environ.get('WAVELINK_URI')
 WAVELINK_PASSWORD = os.environ.get('WAVELINK_PASSWORD')
 
+DATABASE_URL=os.environ.get('DATABASE_URL')
+
 DISCORD_VOICE_CHANNELS_ID = os.environ.get('DISCORD_VOICE_CHANNELS_ID')
 
 if __name__ == '__main__':
