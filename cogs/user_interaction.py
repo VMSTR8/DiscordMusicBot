@@ -12,7 +12,10 @@ import discord
 from discord import app_commands, Interaction
 from discord.ext import commands
 
-from database.user.db_handler import add_waifu_to_user, check_user_waifu_link_exists
+from database.user.db_handler import (
+    add_waifu_to_user,
+    check_user_waifu_link_exists
+)
 
 from settings.settings import DISCORD_VOICE_CHANNELS_ID
 
@@ -79,7 +82,12 @@ class UserInteractionCog(commands.Cog):
             f'доступы во все голосовые каналы.'
         )
 
-    async def checks_before_grant_permission(self, interaction: Interaction, role: str, urls: List[str]) -> None:
+    async def checks_before_grant_permission(
+            self,
+            interaction: Interaction,
+            role: str,
+            urls: List[str]
+    ) -> None:
         if len(urls) != 5:
             await interaction.followup.send(
                 '**Baaaka!** Тебе же было сказано, '
@@ -114,7 +122,7 @@ class UserInteractionCog(commands.Cog):
             try:
                 character_exists = await self.is_character_exit(
                     character_id=character_id
-                    )
+                )
             except Exception as error:
                 await interaction.followup.send(
                     'Что-то пошло не так :( Извини... я все напортачила. '
@@ -131,16 +139,16 @@ class UserInteractionCog(commands.Cog):
             sleep(0.1)
             waifu_data = await self.fetch_waifu_data(
                 character_id=character_id
-                )
+            )
             await add_waifu_to_user(
-                discord_id=discord_id, 
+                discord_id=discord_id,
                 waifu_data=waifu_data
-                )
+            )
 
         await self.create_role_and_permission(
-            interaction=interaction, 
+            interaction=interaction,
             role_name=role
-            )
+        )
 
     @commands.Cog.listener()
     async def on_member_join(self, member) -> None:
@@ -172,7 +180,9 @@ class UserInteractionCog(commands.Cog):
 
         if existing_wiafu_list:
             await interaction.followup.send(
-                'Ты уже заполнял список своих вайфу!'
+                '*Кхм*, ну... не то, чтобы меня это волнует, но ты '
+                'уже аполнил список своих вайфу... и ладно, не думай, '
+                'что я о чем-то беспокоюсь, дурак!'
             )
             return
 
