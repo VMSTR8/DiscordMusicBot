@@ -4,6 +4,8 @@ import re
 
 import random
 
+from urllib.parse import urlparse
+
 from typing import Union, List, Dict, Any
 
 from time import sleep
@@ -14,7 +16,13 @@ from discord.ext import commands
 
 from database.user.db_handler import (
     add_waifu_to_user,
-    check_user_waifu_link_exists
+    check_user_waifu_link_exists,
+    get_user_waifus,
+    get_user,
+    get_waifu_by_url,
+    check_user_waifu_connection,
+    set_true_love,
+    delete_true_love,
 )
 
 from settings.settings import DISCORD_VOICE_CHANNELS_ID
@@ -202,3 +210,108 @@ class UserInteractionCog(commands.Cog):
             role=role,
             urls=urls
         )
+
+    @app_commands.command(
+        name='show_my_waifus',
+        description='Показать добавленных вайфу'
+    )
+    async def show_user_waifus(self, interaction: Interaction):
+        await interaction.response.defer()
+
+        discord_id = interaction.user.id
+        username = interaction.user.display_name
+
+        waifus = await get_user_waifus(discord_id=discord_id)
+        if not waifus:
+            await interaction.followup.send(
+                'Ты еще не заполнял список своих вайфу\nВызови команду /grant_permission для заполнения списка'
+            )
+
+        embed = discord.Embed(title=f'Список вайфу {username}', color=0x334873)
+
+        for number, waifu_link in enumerate(waifus, start=1):
+            waifu = waifu_link.waifu
+            field_value = (
+                f'Ссылка: https://shikimori.me{waifu.url}\n'
+                f'Еще известна, как: {waifu.alt_name}\n'
+                f'Имя на японском: {waifu.japanese_name}\n'
+                f'Shikimori ID: {waifu.shikimori_id}'
+            )
+
+            if waifu_link.true_love:
+                field_value = f'`❤️ TRUE LOVE ❤️` Выбрана самой любимой вайфу у {username}\n{field_value}'
+
+            embed.add_field(
+                name=f'{number}. Имя: **{waifu.waifu_name_rus}**',
+                value=field_value,
+                inline=False
+            )
+        
+        embed.set_footer(text='Ты можешь добавить лейбл True Love вызовом команды /true_love')
+
+        await interaction.followup.send(
+            embed=embed
+        )
+
+    @app_commands.command(
+        name='true_love',
+        description='Добавить лейбл True Love для одной из твоих вайфу'
+    )
+    @app_commands.describe(
+        waifu_url='Отправь ссылку на ранее добавленную вайфу'
+    )
+    async def true_love(self, interaction: Interaction, waifu_url: str):
+        waifu_url = urlparse(waifu_url)
+        discord_id = interaction.user.id
+        user = await get_user(discord_id=discord_id)
+        waifu = await get_waifu_by_url(waifu_url=waifu_url.path)
+
+        if not user:
+            await interaction.response.send_message(
+                'Ой, какой сюрприз! Ты до сих пор не получил права на сервере. Наверное, так и будешь вечным молчуном...',
+                ephemeral=True
+                )
+            return
+
+        if not waifu:
+            await interaction.response.send_message(
+                'Все уже давно добавили вайфу, а ты, как всегда, остаешься в прошлом. Ты ведь хоть знаешь, что такое вайфу? А то вместо правильной ссылки ты скинул мне какую-то ерунду...',
+                ephemeral=True
+                )
+            return
+
+        user_waifu_connection = await check_user_waifu_connection(user=user, waifu=waifu)
+        if not user_waifu_connection:
+            await interaction.response.send_message(
+                'А ты всё так набиваешь оскомину своими запросами! Нет, конечно же, между указанной вайфу и тобой нет никакой связи. Но раз ты так недоумеваешь, мне просто интересно понаблюдать за твоей неудачной попыткой. Но, знаешь ли, дело твоё – что там у тебя в голове.',
+                ephemeral=True
+                )
+            return
+
+        await set_true_love(user=user, waifu=waifu)
+        await interaction.response.send_message(
+            f'Ах, наконец-то ты сделал хоть какой-то шаг вперёд! `❤️ TRUE LOVE ❤️` для **{waifu.waifu_name_rus}** добавлен, но, конечно же, это вовсе не значит, что я впечатлена или что-то подобное. Ты просто делаешь то, что должен был сделать.',
+            ephemeral=True
+            )
+
+    @app_commands.command(
+        name='delete_true_love',
+        description='Удалить лейбл True Love, установленный на одной из твоих вайфу'
+    )
+    async def delete_true_love(self, interaction: Interaction):
+        discord_id = interaction.user.id
+        user = await get_user(discord_id=discord_id)
+
+        if not user:
+            await interaction.response.send_message(
+                'Пфф, ну и что ты тут пытаешься бросить кого-то, когда еще даже не получил права на сервере?',
+                ephemeral=True
+                )
+            return
+
+        await delete_true_love(user=user)
+        await interaction.response.send_message(
+            f'*Смотрит на тебя с отвращением*\n\nВзял и решил бросить кого-то — типичное поведение для таких, как ты.',
+            ephemeral=True
+            )
+    

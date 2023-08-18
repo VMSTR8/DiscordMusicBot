@@ -41,4 +41,3 @@ class UserWaifuLink(Model):
 
     def __str__(self):
         return f"{self.user.discord_id} - {self.waifu.waifu_name}"
-
