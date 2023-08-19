@@ -10,6 +10,8 @@ from typing import Union, List, Dict, Any
 
 from time import sleep
 
+from collections import deque
+
 import discord
 from discord import app_commands, Interaction
 from discord.ext import commands
@@ -22,10 +24,66 @@ from database.user.db_handler import (
     get_waifu_by_url,
     check_user_waifu_connection,
     set_true_love,
-    delete_true_love,
+    remove_true_love,
+    count_waifus,
 )
 
 from settings.settings import DISCORD_VOICE_CHANNELS_ID
+
+
+class PaginatorView(discord.ui.View):
+    def __init__(self, embeds: List[discord.Embed]) -> None:
+
+        super().__init__(timeout=300)
+
+        self._embeds = embeds
+        self._queue = deque(embeds)
+        self._initial = embeds[0]
+        self._len = len(embeds)
+        self._current_page = 1
+        self.children[0].disabled = True
+
+        if self._current_page == self._len:
+            self.children[1].disabled = True
+
+        self._queue[0].set_footer(
+            text=f'Текущая страница: {self._current_page} из {self._len}')
+
+    async def update_buttons(self, interaction: Interaction) -> None:
+        for i in self._queue:
+            i.set_footer(
+                text=f'Текущая страница: {self._current_page} из {self._len}')
+        if self._current_page == self._len:
+            self.children[1].disabled = True
+        else:
+            self.children[1].disabled = False
+
+        if self._current_page == 1:
+            self.children[0].disabled = True
+        else:
+            self.children[0].disabled = False
+
+        await interaction.message.edit(view=self)
+
+    @discord.ui.button(emoji='⏮')
+    async def previous(self, interaction: Interaction, _):
+        self._queue.rotate(1)
+        embed = self._queue[0]
+        self._current_page -= 1
+        await self.update_buttons(interaction=interaction)
+        await interaction.response.edit_message(embed=embed)
+
+    @discord.ui.button(emoji='⏭')
+    async def next(self, interaction: Interaction, _):
+        self._queue.rotate(-1)
+        embed = self._queue[0]
+        self._current_page += 1
+        await self.update_buttons(interaction=interaction)
+        await interaction.response.edit_message(embed=embed)
+
+    @property
+    def initial(self) -> discord.Embed:
+        return self._initial
 
 
 class UserInteractionCog(commands.Cog):
@@ -224,7 +282,8 @@ class UserInteractionCog(commands.Cog):
         waifus = await get_user_waifus(discord_id=discord_id)
         if not waifus:
             await interaction.followup.send(
-                'Ты еще не заполнял список своих вайфу\nВызови команду /grant_permission для заполнения списка'
+                'Ты еще не заполнял список своих вайфу\n'
+                'Вызови команду /grant_permission для заполнения списка'
             )
 
         embed = discord.Embed(title=f'Список вайфу {username}', color=0x334873)
@@ -239,15 +298,17 @@ class UserInteractionCog(commands.Cog):
             )
 
             if waifu_link.true_love:
-                field_value = f'`❤️ TRUE LOVE ❤️` Выбрана самой любимой вайфу у {username}\n{field_value}'
+                field_value = f'`❤️ TRUE LOVE ❤️` '
+                'Выбрана самой любимой вайфу у {username}\n{field_value}'
 
             embed.add_field(
                 name=f'{number}. Имя: **{waifu.waifu_name_rus}**',
                 value=field_value,
                 inline=False
             )
-        
-        embed.set_footer(text='Ты можешь добавить лейбл True Love вызовом команды /true_love')
+
+        embed.set_footer(
+            text='Ты можешь добавить лейбл True Love вызовом команды /true_love')
 
         await interaction.followup.send(
             embed=embed
@@ -268,31 +329,46 @@ class UserInteractionCog(commands.Cog):
 
         if not user:
             await interaction.response.send_message(
-                'Ой, какой сюрприз! Ты до сих пор не получил права на сервере. Наверное, так и будешь вечным молчуном...',
+                'Ой, какой сюрприз! Ты до сих пор не получил '
+                'права на сервере. Наверное, так и будешь вечным молчуном...',
                 ephemeral=True
-                )
+            )
             return
 
         if not waifu:
             await interaction.response.send_message(
-                'Все уже давно добавили вайфу, а ты, как всегда, остаешься в прошлом. Ты ведь хоть знаешь, что такое вайфу? А то вместо правильной ссылки ты скинул мне какую-то ерунду...',
+                'Все уже давно добавили вайфу, а ты, как всегда, '
+                'остаешься в прошлом. Ты ведь хоть знаешь, '
+                'что такое "вайфу"? А то вместо правильной '
+                'ссылки ты скинул мне какую-то ерунду...',
                 ephemeral=True
-                )
+            )
             return
 
-        user_waifu_connection = await check_user_waifu_connection(user=user, waifu=waifu)
+        user_waifu_connection = await check_user_waifu_connection(
+            user=user,
+            waifu=waifu
+        )
         if not user_waifu_connection:
             await interaction.response.send_message(
-                'А ты всё так набиваешь оскомину своими запросами! Нет, конечно же, между указанной вайфу и тобой нет никакой связи. Но раз ты так недоумеваешь, мне просто интересно понаблюдать за твоей неудачной попыткой. Но, знаешь ли, дело твоё – что там у тебя в голове.',
+                'А ты всё так набиваешь оскомину своими запросами! '
+                'Нет, конечно же, между указанной вайфу и тобой нет '
+                'никакой связи. Но раз ты так недоумеваешь, '
+                'мне просто интересно понаблюдать за твоей неудачной '
+                'попыткой. Но, знаешь ли, дело твоё – '
+                'что там у тебя в голове.',
                 ephemeral=True
-                )
+            )
             return
 
         await set_true_love(user=user, waifu=waifu)
         await interaction.response.send_message(
-            f'Ах, наконец-то ты сделал хоть какой-то шаг вперёд! `❤️ TRUE LOVE ❤️` для **{waifu.waifu_name_rus}** добавлен, но, конечно же, это вовсе не значит, что я впечатлена или что-то подобное. Ты просто делаешь то, что должен был сделать.',
+            f'Ах, наконец-то ты сделал хоть какой-то шаг вперёд! '
+            '`❤️ TRUE LOVE ❤️` для **{waifu.waifu_name_rus}** добавлен, '
+            'но, конечно же, это вовсе не значит, что я впечатлена или '
+            'что-то подобное. Ты просто делаешь то, что должен был сделать.',
             ephemeral=True
-            )
+        )
 
     @app_commands.command(
         name='delete_true_love',
@@ -306,12 +382,58 @@ class UserInteractionCog(commands.Cog):
             await interaction.response.send_message(
                 'Пфф, ну и что ты тут пытаешься бросить кого-то, когда еще даже не получил права на сервере?',
                 ephemeral=True
-                )
+            )
             return
 
-        await delete_true_love(user=user)
+        await remove_true_love(user=user)
         await interaction.response.send_message(
             f'*Смотрит на тебя с отвращением*\n\nВзял и решил бросить кого-то — типичное поведение для таких, как ты.',
             ephemeral=True
+        )
+
+    @app_commands.command(
+        name='top_waifu',
+        description='Показать рейтинг вайфу по кол-ву добавлений пользователями'
+    )
+    async def waifu_top(self, interaction: Interaction):
+        waifus = await count_waifus()
+        string_to_add = ['🥇', '🥈', '🥉']
+
+        if not waifus:
+            await interaction.response.send_message(
+                'Знаешь, я, конечно, не сильно в этом заинтересована, '
+                'но, кажется, ты пытаешься посмотреть ТОП вайфу. '
+                'Но как-то все пошло не по плану. Скорее всего никто '
+                'еще не добавлял себе вайфу при помощи команды '
+                '/grant_premission. Но это, наверное, '
+                'не стоит мне беспокоиться...',
+                ephemeral=True
             )
-    
+
+        if len(waifus) >= len(string_to_add):
+            for i in range(len(string_to_add)):
+                waifus[i][0] = f'{string_to_add[i]} {waifus[i][0]}'
+
+        embeds = []
+        for waifu_chunk in discord.utils.as_chunks(waifus, 10):
+            filtered_title = re.sub(r'[^\w\s\d]', '', waifu_chunk[0][0])
+            embed = discord.Embed(
+                title=f'Самая популярная вайфу сервера:\n{filtered_title.strip()}',
+                url=f'https://shikimori.me{waifu_chunk[0][3]}',
+                description=f'Так же известна, как: {waifu_chunk[0][2]}\n'
+                'Имя на японском: {waifu_chunk[0][5]}\n\n', color=0x334873
+            )
+            embed.set_author(
+                name='ТОП вайфу по кол-ву добавлений пользователями')
+
+            for value in waifu_chunk:
+                embed.add_field(
+                    name=f'**{value[0]}**',
+                    value=f'`Кол-во добавлений: {value[1]}`\n==========',
+                    inline=False
+                )
+            embed.set_thumbnail(url=f'https://shikimori.me{waifu_chunk[0][4]}')
+            embeds.append(embed)
+
+        view = PaginatorView(embeds)
+        await interaction.response.send_message(embed=view.initial, view=view)
