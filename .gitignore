@@ -19,3 +19,6 @@ db.sqlite3-shm
 db.sqlite3-wal
 *.toml
 migrations/
+
+#logs
+logs/
