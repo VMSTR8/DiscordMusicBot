@@ -1,4 +1,10 @@
+import os
+
 import asyncio
+
+import logging
+
+from datetime import datetime
 
 import discord
 from discord.ext import commands
@@ -17,6 +23,11 @@ from settings.settings import (
     WAVELINK_URI,
     WAVELINK_PASSWORD,
 )
+
+if not os.path.exists("logs"):
+    os.makedirs("logs")
+
+log_file_name = datetime.now().strftime("log_%Y_%m_%d_%H_%M.log")
 
 bot_config = {
     'token': BOT_TOKEN,
@@ -38,9 +49,12 @@ bot = commands.Bot(
 
 async def connect_nodes() -> None:
     await bot.wait_until_ready()
-    node: wavelink.Node = wavelink.Node(
-        uri=WAVELINK_URI, password=WAVELINK_PASSWORD, secure=False)
-    await wavelink.NodePool.connect(client=bot, nodes=[node])
+    try:
+        node: wavelink.Node = wavelink.Node(
+            uri=WAVELINK_URI, password=WAVELINK_PASSWORD, secure=False)
+        await wavelink.NodePool.connect(client=bot, nodes=[node])
+    except Exception as error:
+        logging.error(f"An error occurred while connecting nodes: {error}")
 
 
 async def setup_bot(bot: commands.Bot) -> None:
@@ -49,27 +63,41 @@ async def setup_bot(bot: commands.Bot) -> None:
 
 
 def main() -> None:
-    
+
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s [%(levelname)s]: %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S",
+        handlers=[
+            logging.FileHandler(os.path.join("logs", log_file_name)),
+            logging.StreamHandler()
+        ]
+    )
+
+    # TODO сделать обработку ошибок конекта к бд
     run_async(init())
-    
+
     @bot.event
     async def on_ready() -> None:
-        print(f'Logged in as {bot.user}')
+        logging.info(f'Logged in as {bot.user}')
         synced = await bot.tree.sync()
         await connect_nodes()
         try:
-            print(f"Synced {len(synced)} command(s)")
+            logging.info(f"Synced {len(synced)} command(s)")
         except Exception as error:
-            print(error.message)
+            logging.error(f"An error occurred during syncing: {error}")
         activity = discord.Activity(
             type=discord.ActivityType.watching,
             name='test'
         )
         await bot.change_presence(activity=activity)
 
-    asyncio.run(setup_bot(bot=bot))
-
-    bot.run(token=bot_config['token'])
+    # TODO сделать правильное отсоединение при ctrl + c или разрыве, учесть и wavelink
+    try:
+        asyncio.run(setup_bot(bot=bot))
+        bot.run(token=bot_config['token'])
+    except Exception as error:
+        logging.error(f"An error occurred while running the bot: {error}")
 
 
 if __name__ == '__main__':

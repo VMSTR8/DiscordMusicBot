@@ -1,5 +1,7 @@
 import re
 
+import logging
+
 from datetime import timedelta
 
 import discord
@@ -88,7 +90,7 @@ class MusicCog(commands.Cog):
 
     @commands.Cog.listener()
     async def on_wavelink_node_ready(self, node: wavelink.Node) -> None:
-        print(f'Node {node.uri} ready.')
+        logging.info(f'Node {node.uri} ready.')
 
     @commands.Cog.listener()
     async def on_wavelink_track_start(
