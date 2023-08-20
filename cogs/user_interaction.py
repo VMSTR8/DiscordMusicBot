@@ -47,7 +47,17 @@ class PaginatorView(discord.ui.View):
             self.children[1].disabled = True
 
         self._queue[0].set_footer(
-            text=f'Текущая страница: {self._current_page} из {self._len}')
+            text=f'Текущая страница: {self._current_page} из {self._len}'
+        )
+
+    async def on_timeout(self):
+        embed = discord.Embed(
+            title='Время истекло - ТОП вайфу был закрыт',
+            description='Чтобы снова посмотреть рейтинг '
+            'вызови команду /top_waifu',
+            color=0x334873
+        )
+        await self.message.edit(embed=embed, view=None)
 
     async def update_buttons(self, interaction: Interaction) -> None:
         for i in self._queue:
@@ -122,7 +132,11 @@ class UserInteractionCog(commands.Cog):
                 # TODO dataclass
                 return await response.json()
 
-    async def create_role_and_permission(self, interaction: Interaction, role_name: str) -> None:
+    async def create_role_and_permission(
+            self,
+            interaction: Interaction,
+            role_name: str
+    ) -> None:
         new_role = await interaction.guild.create_role(
             name=role_name.lower().strip(),
             color=discord.Color(random.randint(0, 0xFFFFFF))
@@ -298,8 +312,10 @@ class UserInteractionCog(commands.Cog):
             )
 
             if waifu_link.true_love:
-                field_value = f'`❤️ TRUE LOVE ❤️` '
-                'Выбрана самой любимой вайфу у {username}\n{field_value}'
+                field_value = (
+                    f'`❤️ TRUE LOVE ❤️` '
+                    f'Выбрана самой любимой вайфу у {username}\n{field_value}'
+                )
 
             embed.add_field(
                 name=f'{number}. Имя: **{waifu.waifu_name_rus}**',
@@ -308,7 +324,8 @@ class UserInteractionCog(commands.Cog):
             )
 
         embed.set_footer(
-            text='Ты можешь добавить лейбл True Love вызовом команды /true_love')
+            text='Ты можешь добавить лейбл True Love вызовом команды /true_love'
+        )
 
         await interaction.followup.send(
             embed=embed
@@ -364,9 +381,9 @@ class UserInteractionCog(commands.Cog):
         await set_true_love(user=user, waifu=waifu)
         await interaction.response.send_message(
             f'Ах, наконец-то ты сделал хоть какой-то шаг вперёд! '
-            '`❤️ TRUE LOVE ❤️` для **{waifu.waifu_name_rus}** добавлен, '
-            'но, конечно же, это вовсе не значит, что я впечатлена или '
-            'что-то подобное. Ты просто делаешь то, что должен был сделать.',
+            f'`❤️ TRUE LOVE ❤️` для **{waifu.waifu_name_rus}** добавлен, '
+            f'но, конечно же, это вовсе не значит, что я впечатлена или '
+            f'что-то подобное. Ты просто делаешь то, что должен был сделать.',
             ephemeral=True
         )
 
@@ -380,14 +397,16 @@ class UserInteractionCog(commands.Cog):
 
         if not user:
             await interaction.response.send_message(
-                'Пфф, ну и что ты тут пытаешься бросить кого-то, когда еще даже не получил права на сервере?',
+                'Пфф, ну и что ты тут пытаешься бросить кого-то, '
+                'когда еще даже не получил права на сервере?',
                 ephemeral=True
             )
             return
 
         await remove_true_love(user=user)
         await interaction.response.send_message(
-            f'*Смотрит на тебя с отвращением*\n\nВзял и решил бросить кого-то — типичное поведение для таких, как ты.',
+            f'*Смотрит на тебя с отвращением*\n\nВзял и решил '
+            f'бросить кого-то — типичное поведение для таких, как ты.',
             ephemeral=True
         )
 
@@ -416,12 +435,12 @@ class UserInteractionCog(commands.Cog):
 
         embeds = []
         for waifu_chunk in discord.utils.as_chunks(waifus, 10):
-            filtered_title = re.sub(r'[^\w\s\d]', '', waifu_chunk[0][0])
+            filtered_title = re.sub(r'[^\w\s\d]', '', waifus[0][0])
             embed = discord.Embed(
                 title=f'Самая популярная вайфу сервера:\n{filtered_title.strip()}',
-                url=f'https://shikimori.me{waifu_chunk[0][3]}',
-                description=f'Так же известна, как: {waifu_chunk[0][2]}\n'
-                'Имя на японском: {waifu_chunk[0][5]}\n\n', color=0x334873
+                url=f'https://shikimori.me{waifus[0][3]}',
+                description=f'Так же известна, как: {waifus[0][2]}\n'
+                f'Имя на японском: {waifus[0][5]}\n\n', color=0x334873
             )
             embed.set_author(
                 name='ТОП вайфу по кол-ву добавлений пользователями')
@@ -432,8 +451,9 @@ class UserInteractionCog(commands.Cog):
                     value=f'`Кол-во добавлений: {value[1]}`\n==========',
                     inline=False
                 )
-            embed.set_thumbnail(url=f'https://shikimori.me{waifu_chunk[0][4]}')
+            embed.set_thumbnail(url=f'https://shikimori.me{waifus[0][4]}')
             embeds.append(embed)
 
         view = PaginatorView(embeds)
         await interaction.response.send_message(embed=view.initial, view=view)
+        view.message = await interaction.original_response()
