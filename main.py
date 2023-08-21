@@ -26,10 +26,10 @@ from settings.settings import (
     WAVELINK_PASSWORD,
 )
 
-if not os.path.exists("logs"):
-    os.makedirs("logs")
+if not os.path.exists('logs'):
+    os.makedirs('logs')
 
-log_file_name = datetime.now().strftime("log_%Y_%m_%d_%H_%M.log")
+log_file_name = datetime.now().strftime('log_%Y_%m_%d_%H_%M.log')
 
 bot_config = {
     'token': BOT_TOKEN,
@@ -63,7 +63,7 @@ async def connect_nodes() -> None:
         )
         await wavelink.NodePool.connect(client=bot, nodes=[node])
     except aiohttp.client_exceptions.ClientConnectorError as error:
-        logging.error(f"An error occurred while connecting nodes: {error}")
+        logging.error(f'An error occurred while connecting nodes: {error}')
         await node._session.close()
         await bot.close()
 
@@ -82,10 +82,10 @@ def main() -> None:
     '''
     logging.basicConfig(
         level=logging.INFO,
-        format="%(asctime)s [%(levelname)s]: %(message)s",
-        datefmt="%Y-%m-%d %H:%M:%S",
+        format='%(asctime)s [%(levelname)s]: %(message)s',
+        datefmt='%Y-%m-%d %H:%M:%S',
         handlers=[
-            logging.FileHandler(os.path.join("logs", log_file_name)),
+            logging.FileHandler(os.path.join('logs', log_file_name)),
             logging.StreamHandler()
         ]
     )
@@ -98,9 +98,9 @@ def main() -> None:
 
         try:
             synced = await bot.tree.sync()
-            logging.info(f"Synced {len(synced)} command(s)")
+            logging.info(f'Synced {len(synced)} command(s)')
         except Exception as error:
-            logging.error(f"An error occurred during syncing: {error}")
+            logging.error(f'An error occurred during syncing: {error}')
 
         await connect_nodes()
 
@@ -115,19 +115,23 @@ def main() -> None:
     try:
         bot.run(token=bot_config['token'])
     except Exception as error:
-        logging.error(f"An error occurred while running the bot: {error}")
+        logging.error(f'An error occurred while running the bot: {error}')
 
 
 if __name__ == '__main__':
     try:
         main()
     except KeyboardInterrupt:
-        node = wavelink.NodePool.get_connected_node()
-        if node:
+        try:
+            node = wavelink.NodePool.get_connected_node()
             asyncio.run(node._session.close())
+        except wavelink.exceptions.InvalidNode:
+            logging.error(f'No Nodes established')
         asyncio.run(Tortoise.close_connections())
     finally:
-        node = wavelink.NodePool.get_connected_node()
-        if node:
+        try:
+            node = wavelink.NodePool.get_connected_node()
             asyncio.run(node._session.close())
+        except wavelink.exceptions.InvalidNode:
+            logging.error(f'No Nodes established')
         asyncio.run(Tortoise.close_connections())
