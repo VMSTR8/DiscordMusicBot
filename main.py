@@ -68,6 +68,14 @@ async def connect_nodes() -> None:
         await bot.close()
 
 
+async def close_node_connection() -> None:
+    try:
+        node = wavelink.NodePool.get_connected_node()
+        asyncio.run(node._session.close())
+    except wavelink.exceptions.InvalidNode:
+        logging.error('No Nodes established')
+
+
 async def setup_bot(bot: commands.Bot) -> None:
     '''
     Sets up cogs for the bot.
@@ -122,16 +130,8 @@ if __name__ == '__main__':
     try:
         main()
     except KeyboardInterrupt:
-        try:
-            node = wavelink.NodePool.get_connected_node()
-            asyncio.run(node._session.close())
-        except wavelink.exceptions.InvalidNode:
-            logging.error('No Nodes established')
+        asyncio.run(close_node_connection())
         asyncio.run(Tortoise.close_connections())
     finally:
-        try:
-            node = wavelink.NodePool.get_connected_node()
-            asyncio.run(node._session.close())
-        except wavelink.exceptions.InvalidNode:
-            logging.error('No Nodes established')
+        asyncio.run(close_node_connection())
         asyncio.run(Tortoise.close_connections())
