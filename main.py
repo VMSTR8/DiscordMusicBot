@@ -2,6 +2,8 @@ import os
 
 import asyncio
 
+import aiohttp
+
 import logging
 
 from datetime import datetime
@@ -11,7 +13,7 @@ from discord.ext import commands
 
 import wavelink
 
-from tortoise import run_async
+from tortoise import run_async, Tortoise
 
 from database.init import init
 
@@ -48,22 +50,36 @@ bot = commands.Bot(
 
 
 async def connect_nodes() -> None:
+    '''
+    Connects the bot to a wavelink node.
+    '''
     await bot.wait_until_ready()
     try:
         node: wavelink.Node = wavelink.Node(
-            uri=WAVELINK_URI, password=WAVELINK_PASSWORD, secure=False)
+            uri=WAVELINK_URI,
+            password=WAVELINK_PASSWORD,
+            secure=False,
+            retries=5
+        )
         await wavelink.NodePool.connect(client=bot, nodes=[node])
-    except Exception as error:
+    except aiohttp.client_exceptions.ClientConnectorError as error:
         logging.error(f"An error occurred while connecting nodes: {error}")
+        await node._session.close()
+        await bot.close()
 
 
 async def setup_bot(bot: commands.Bot) -> None:
+    '''
+    Sets up cogs for the bot.
+    '''
     await bot.add_cog(MusicCog(bot=bot))
     await bot.add_cog(UserInteractionCog(bot=bot))
 
 
 def main() -> None:
-
+    '''
+    Main entry point of the bot.
+    '''
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s [%(levelname)s]: %(message)s",
@@ -74,31 +90,44 @@ def main() -> None:
         ]
     )
 
-    # TODO сделать обработку ошибок конекта к бд
     run_async(init())
 
     @bot.event
     async def on_ready() -> None:
         logging.info(f'Logged in as {bot.user}')
-        synced = await bot.tree.sync()
-        await connect_nodes()
+
         try:
+            synced = await bot.tree.sync()
             logging.info(f"Synced {len(synced)} command(s)")
         except Exception as error:
             logging.error(f"An error occurred during syncing: {error}")
+
+        await connect_nodes()
+
         activity = discord.Activity(
             type=discord.ActivityType.watching,
             name='test'
         )
         await bot.change_presence(activity=activity)
 
-    # TODO сделать правильное отсоединение при ctrl + c или разрыве, учесть и wavelink
+    asyncio.run(setup_bot(bot=bot))
+
     try:
-        asyncio.run(setup_bot(bot=bot))
         bot.run(token=bot_config['token'])
     except Exception as error:
         logging.error(f"An error occurred while running the bot: {error}")
 
 
 if __name__ == '__main__':
-    main()
+    try:
+        main()
+    except KeyboardInterrupt:
+        node = wavelink.NodePool.get_connected_node()
+        if node:
+            asyncio.run(node._session.close())
+        asyncio.run(Tortoise.close_connections())
+    finally:
+        node = wavelink.NodePool.get_connected_node()
+        if node:
+            asyncio.run(node._session.close())
+        asyncio.run(Tortoise.close_connections())
