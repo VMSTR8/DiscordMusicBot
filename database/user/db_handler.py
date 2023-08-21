@@ -3,14 +3,21 @@ from typing import Dict, Any, Optional
 from database.user.models import User, Waifu, UserWaifuLink
 
 
-async def add_waifu_to_user(discord_id: int, waifu_data: Dict[str, Any]) -> None:
+async def add_waifu_to_user(
+        discord_id: int,
+        waifu_data: Dict[str, Any]
+) -> None:
     user, _ = await User.get_or_create(discord_id=discord_id)
 
     waifu_id = waifu_data['id']
     existing_waifu = await Waifu.filter(shikimori_id=str(waifu_id)).first()
 
     if existing_waifu:
-        await UserWaifuLink.create(user_id=user.id, waifu_id=existing_waifu.id, is_true_love_set=False)
+        await UserWaifuLink.create(
+            user_id=user.id,
+            waifu_id=existing_waifu.id,
+            is_true_love_set=False
+        )
     else:
         waifu = await Waifu.create(
             shikimori_id=waifu_id,
@@ -22,7 +29,11 @@ async def add_waifu_to_user(discord_id: int, waifu_data: Dict[str, Any]) -> None
             japanese_name=waifu_data['japanese']
         )
 
-        await UserWaifuLink.create(user_id=user.id, waifu_id=waifu.id, is_true_love_set=False)
+        await UserWaifuLink.create(
+            user_id=user.id,
+            waifu_id=waifu.id,
+            is_true_love_set=False
+        )
 
 
 async def check_user_waifu_link_exists(discord_id: int) -> Optional[bool]:
@@ -38,7 +49,9 @@ async def get_user_waifus(discord_id: int):
     if not user:
         return None
 
-    waifus = await UserWaifuLink.filter(user_id=user.id).prefetch_related('waifu').all()
+    waifus = await UserWaifuLink.filter(
+        user_id=user.id
+    ).prefetch_related('waifu').all()
     if not waifus:
         return None
 
@@ -59,7 +72,10 @@ async def check_user_waifu_connection(user: User, waifu: Waifu):
 
 async def set_true_love(user: User, waifu: Waifu):
     await UserWaifuLink.filter(user=user.id).update(true_love=False)
-    await UserWaifuLink.filter(user=user.id, waifu=waifu.id).update(true_love=True)
+    await UserWaifuLink.filter(
+        user=user.id,
+        waifu=waifu.id
+    ).update(true_love=True)
 
 
 async def remove_true_love(user: User):

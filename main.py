@@ -126,12 +126,12 @@ if __name__ == '__main__':
             node = wavelink.NodePool.get_connected_node()
             asyncio.run(node._session.close())
         except wavelink.exceptions.InvalidNode:
-            logging.error(f'No Nodes established')
+            logging.error('No Nodes established')
         asyncio.run(Tortoise.close_connections())
     finally:
         try:
             node = wavelink.NodePool.get_connected_node()
             asyncio.run(node._session.close())
         except wavelink.exceptions.InvalidNode:
-            logging.error(f'No Nodes established')
+            logging.error('No Nodes established')
         asyncio.run(Tortoise.close_connections())
