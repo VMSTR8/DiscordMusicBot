@@ -5,7 +5,6 @@ from tortoise import fields
 class User(Model):
     id = fields.IntField(pk=True)
     discord_id = fields.IntField(unique=True)
-    # join_date = fields.DatetimeField(auto_now_add=True)
 
     waifu_links = fields.ReverseRelation["UserWaifuLink"]
 
