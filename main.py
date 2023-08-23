@@ -24,114 +24,98 @@ from settings.settings import (
     BOT_TOKEN,
     WAVELINK_URI,
     WAVELINK_PASSWORD,
-)
-
-if not os.path.exists('logs'):
-    os.makedirs('logs')
-
-log_file_name = datetime.now().strftime('log_%Y_%m_%d_%H_%M.log')
-
-bot_config = {
-    'token': BOT_TOKEN,
-    'prefix': '!',
-
-}
-
-intents = discord.Intents.all()
-intents.voice_states = True
-intents.message_content = True
-intents.guilds = True
-
-bot = commands.Bot(
-    command_prefix=bot_config['prefix'],
-    intents=intents,
-
+    MESSAGE_NOT_ALLOWED_TEXT_CHANNELS_ID,
 )
 
 
-async def connect_nodes() -> None:
-    '''
-    Connects the bot to a wavelink node.
-    '''
-    await bot.wait_until_ready()
-    try:
-        node: wavelink.Node = wavelink.Node(
-            uri=WAVELINK_URI,
-            password=WAVELINK_PASSWORD,
-            secure=False,
-            retries=5
+class DiscordBot(commands.Bot):
+
+    def __init__(self):
+        intents = discord.Intents.all()
+        intents.voice_states = True
+        intents.message_content = True
+        intents.guilds = True
+
+        super().__init__(intents=intents, command_prefix='!')
+
+    async def connect_nodes(self) -> None:
+        await self.wait_until_ready()
+        try:
+            node: wavelink.Node = wavelink.Node(
+                uri=WAVELINK_URI,
+                password=WAVELINK_PASSWORD,
+                secure=False,
+                retries=5
+            )
+            await wavelink.NodePool.connect(client=self, nodes=[node])
+        except aiohttp.client_exceptions.ClientConnectorError as error:
+            logging.error(f'An error occurred while connecting nodes: {error}')
+            await node._session.close()
+            await self.close()
+
+    async def setup_hook(self) -> None:
+        await self.add_cog(MusicCog(bot=self))
+        await self.add_cog(UserInteractionCog(bot=self))
+
+        try:
+            synced = await self.tree.sync()
+            logging.info(f'Synced {len(synced)} command(s)')
+        except Exception as error:
+            logging.error(f'An error occurred during syncing: {error}')
+
+    async def on_ready(self):
+        logging.info(f'Logged in as {self.user}')
+
+        await self.connect_nodes()
+
+        activity = discord.Activity(
+            type=discord.ActivityType.watching,
+            name='на тебя с презрением'
         )
-        await wavelink.NodePool.connect(client=bot, nodes=[node])
-    except aiohttp.client_exceptions.ClientConnectorError as error:
-        logging.error(f'An error occurred while connecting nodes: {error}')
-        await node._session.close()
-        await bot.close()
+        await self.change_presence(activity=activity)
+
+    async def on_message(self, message):
+        if message.channel.id in [
+            int(channel_id)
+            for channel_id in MESSAGE_NOT_ALLOWED_TEXT_CHANNELS_ID.split(',')
+        ] and not message.author.bot:
+            await message.delete()
+
+    async def close_connections(self):
+        try:
+            node: wavelink.Node = wavelink.NodePool.get_node()
+            await node._session.close()
+        except wavelink.exceptions.InvalidNode:
+            logging.error('No Nodes established')
+        await Tortoise.close_connections()
 
 
-async def close_node_connection() -> None:
-    try:
-        node = wavelink.NodePool.get_connected_node()
-        asyncio.run(node._session.close())
-    except wavelink.exceptions.InvalidNode:
-        logging.error('No Nodes established')
-
-
-async def setup_bot(bot: commands.Bot) -> None:
-    '''
-    Sets up cogs for the bot.
-    '''
-    await bot.add_cog(MusicCog(bot=bot))
-    await bot.add_cog(UserInteractionCog(bot=bot))
+bot = DiscordBot()
 
 
 def main() -> None:
-    '''
-    Main entry point of the bot.
-    '''
+
+    if not os.path.exists('logs'):
+        os.makedirs('logs')
+
+    log_file_name = datetime.now().strftime('log_%Y_%m_%d_%H_%M.log')
+
     logging.basicConfig(
         level=logging.INFO,
         format='%(asctime)s [%(levelname)s]: %(message)s',
         datefmt='%Y-%m-%d %H:%M:%S',
         handlers=[
-            logging.FileHandler(os.path.join('logs', log_file_name)),
-            logging.StreamHandler()
+                logging.FileHandler(os.path.join('logs', log_file_name)),
+                logging.StreamHandler()
         ]
     )
 
     run_async(init())
-
-    @bot.event
-    async def on_ready() -> None:
-        logging.info(f'Logged in as {bot.user}')
-
-        try:
-            synced = await bot.tree.sync()
-            logging.info(f'Synced {len(synced)} command(s)')
-        except Exception as error:
-            logging.error(f'An error occurred during syncing: {error}')
-
-        await connect_nodes()
-
-        activity = discord.Activity(
-            type=discord.ActivityType.watching,
-            name='test'
-        )
-        await bot.change_presence(activity=activity)
-
-    asyncio.run(setup_bot(bot=bot))
-
-    try:
-        bot.run(token=bot_config['token'])
-    except Exception as error:
-        logging.error(f'An error occurred while running the bot: {error}')
+    bot.run(BOT_TOKEN)
 
 
 if __name__ == '__main__':
     try:
         main()
-    except KeyboardInterrupt:
-        asyncio.run(close_node_connection())
-        asyncio.run(Tortoise.close_connections())
     finally:
-        asyncio.run(close_node_connection())
-        asyncio.run(Tortoise.close_connections())
+        asyncio.run(bot.close_connections())
