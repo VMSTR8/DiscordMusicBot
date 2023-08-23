@@ -26,10 +26,19 @@ from database.user.db_handler import (
     count_waifus,
 )
 
+from cogs.config import (
+    general_permissions,
+    voice_channel_permissions,
+    text_channel_permissions
+)
+
 from settings.settings import (
-    DISCORD_VOICE_CHANNELS_ID,
+    DISCORD_VOICE_CATEGORIES_ID,
+    DISCORD_TEXT_CATEGORIES_ID,
     GREETINGS_CHANNEL,
 )
+
+from cogs.answers import USER_INTERACTION_ANSWERS
 
 
 class PaginatorView(discord.ui.View):
@@ -149,38 +158,40 @@ class UserInteractionCog(commands.Cog):
     ) -> None:
         new_role = await interaction.guild.create_role(
             name=role_name.lower().strip(),
-            color=discord.Color(random.randint(0, 0xFFFFFF))
+            color=discord.Color(random.randint(0, 0xFFFFFF)),
+            hoist=True
         )
         new_role.hoist
 
         await interaction.user.add_roles(new_role)
 
-        voice_channels_id = DISCORD_VOICE_CHANNELS_ID.split(',')
+        voice_categories_id = DISCORD_VOICE_CATEGORIES_ID.split(',')
+        text_categories_id = DISCORD_TEXT_CATEGORIES_ID.split(',')
 
-        for voice_channel_id in voice_channels_id:
-            voice_channel = interaction.guild.get_channel(
-                int(voice_channel_id)
+        for voice_category_id in voice_categories_id:
+            voice_category = interaction.guild.get_channel(
+                int(voice_category_id)
             )
-            await voice_channel.set_permissions(
+            await voice_category.set_permissions(
                 new_role,
-                view_channel=True,
-                connect=True,
-                speak=True,
-                add_reaction=True,
-                attach_files=True,
-                change_nickname=True,
-                external_emojis=True,
-                external_stickers=True,
-                send_messages=True,
-                send_messages_in_threads=True,
-                stream=True,
-                use_soundboard=True
+                **general_permissions,
+                **voice_channel_permissions
+            )
+
+        for text_сategory_id in text_categories_id:
+            text_category = interaction.guild.get_channel(
+                int(text_сategory_id)
+            )
+            await text_category.set_permissions(
+                new_role,
+                **general_permissions,
+                **text_channel_permissions
             )
 
         await interaction.followup.send(
-            f'Не то, чтобы мне до тебя было какое-то дело, но...\n'
-            f'Я создала роль **{role_name.capitalize()}** для тебя и выдала '
-            f'доступы во все голосовые каналы.'
+            USER_INTERACTION_ANSWERS[
+                'role_permission_created'
+            ].format(role_name=role_name.capitalize())
         )
 
     async def checks_before_grant_permission(
@@ -191,8 +202,7 @@ class UserInteractionCog(commands.Cog):
     ) -> None:
         if len(urls) != 5:
             await interaction.followup.send(
-                '**Baaaka!** Тебе же было сказано, '
-                'отправь 5 ссылок, ни больше ни меньше!',
+                USER_INTERACTION_ANSWERS['url_len_err']
             )
             return
 
@@ -202,17 +212,15 @@ class UserInteractionCog(commands.Cog):
                 valid_urls.append(url)
             else:
                 await interaction.followup.send(
-                    f'*Надулась*\n\n**{url}**, вот это похоже на '
-                    'ссылку на персонажа с сайта Shikimori?',
+                    USER_INTERACTION_ANSWERS[
+                        'shikimori_url_valid_err'
+                    ].format(url=url)
                 )
                 return
 
         if len(valid_urls) != len(set(valid_urls)):
             await interaction.followup.send(
-                'Ты всегда так глупо ведешь себя, '
-                'или только передо мной? Твои вайфу должны быть '
-                'уникальны! А ты добавляешь одну и ту '
-                'же вайфу несколько раз...'
+                USER_INTERACTION_ANSWERS['unique_waifu_err']
             )
             return
 
@@ -227,8 +235,9 @@ class UserInteractionCog(commands.Cog):
             if character:
                 if character['status'] == 404:
                     await interaction.followup.send(
-                        f'Персонаж по ссылке {url} не найден на Shikimori. '
-                        'Повтори команду, введя корректные ссылки!',
+                        USER_INTERACTION_ANSWERS[
+                            'waifu_not_found'
+                        ].format(url=url)
                     )
                     return
                 elif character['status'] in [200, 302]:
@@ -238,14 +247,12 @@ class UserInteractionCog(commands.Cog):
                     )
                 else:
                     await interaction.followup.send(
-                        'Что-то пошло не так :( Извини... я все напортачила. '
-                        'Надеюсь, ты не сердишься на меня... Попробуй еще раз!'
+                        USER_INTERACTION_ANSWERS['shikimori_unknown_message']
                     )
                     return
             else:
                 await interaction.followup.send(
-                    'Что-то пошло не так :( Извини... я все напортачила. '
-                    'Надеюсь, ты не сердишься на меня... Попробуй еще раз!'
+                    USER_INTERACTION_ANSWERS['shikimori_unknown_message']
                 )
                 return
 
@@ -257,9 +264,9 @@ class UserInteractionCog(commands.Cog):
     @commands.Cog.listener()
     async def on_member_join(self, member) -> None:
         greetings_channel = self.bot.fetch_channel(GREETINGS_CHANNEL)
-        await greetings_channel.send('Сообщение')
-
-    # TODO on membed leave
+        await greetings_channel.send(
+            USER_INTERACTION_ANSWERS['greetings']
+        )
 
     @app_commands.command(
         name='grant_permission',
@@ -287,10 +294,7 @@ class UserInteractionCog(commands.Cog):
 
         if existing_wiafu_list:
             await interaction.followup.send(
-                'Я случайно заметила, как ты уже отправлял '
-                'список своих вайфу... '
-                'Но это только потому что мне было скучно, '
-                'а не потому что мне важно, понял?!'
+                USER_INTERACTION_ANSWERS['adding_waifu_err']
             )
             return
 
@@ -300,7 +304,9 @@ class UserInteractionCog(commands.Cog):
         )
         if existing_role:
             await interaction.followup.send(
-                f'Роль **{role.capitalize()}** уже существует на сервере!',
+                USER_INTERACTION_ANSWERS[
+                    'role_already_exists'
+                ].format(role=role.capitalize()),
             )
             return
 
@@ -324,8 +330,7 @@ class UserInteractionCog(commands.Cog):
         waifus = await get_user_waifus(discord_id=discord_id)
         if not waifus:
             await interaction.followup.send(
-                'Ты еще не заполнял список своих вайфу\n'
-                'Вызови команду /grant_permission для заполнения списка'
+                USER_INTERACTION_ANSWERS['show_my_waifu_err']
             )
             return
 
@@ -376,17 +381,14 @@ class UserInteractionCog(commands.Cog):
 
         if not user:
             await interaction.response.send_message(
-                'Ой, какой сюрприз! Ты до сих пор не получил '
-                'права на сервере. Наверное, так и будешь вечным молчуном...',
+                USER_INTERACTION_ANSWERS['true_love_no_user_err'],
                 ephemeral=True
             )
             return
 
         if not waifu:
             await interaction.response.send_message(
-                'Ты ведь хоть знаешь, что такое "вайфу"? '
-                'А то вместо правильной ссылки '
-                'ты скинул мне какую-то ерунду...',
+                USER_INTERACTION_ANSWERS['true_love_url_err'],
                 ephemeral=True
             )
             return
@@ -397,21 +399,16 @@ class UserInteractionCog(commands.Cog):
         )
         if not user_waifu_connection:
             await interaction.response.send_message(
-                'А ты всё так набиваешь оскомину своими запросами! '
-                'Нет, конечно же, между указанной вайфу и тобой нет '
-                'никакой связи. И раз ты так недоумеваешь, '
-                'мне просто интересно понаблюдать за твоей неудачной '
-                'попыткой.',
+                USER_INTERACTION_ANSWERS['user_waifu_no_connection'],
                 ephemeral=True
             )
             return
 
         await set_true_love(user=user, waifu=waifu)
         await interaction.response.send_message(
-            f'Ах, наконец-то ты сделал хоть какой-то шаг вперёд!\n'
-            f'`❤️ TRUE LOVE ❤️` для **{waifu.waifu_name_rus}** добавлен, '
-            f'но это вовсе не значит, что я впечатлена или '
-            f'что-то подобное. Ты просто делаешь то, что должен был сделать.',
+            USER_INTERACTION_ANSWERS[
+                'added_true_love'
+            ].format(waifu=waifu.waifu_name_rus),
             ephemeral=True
         )
 
@@ -426,16 +423,14 @@ class UserInteractionCog(commands.Cog):
 
         if not user:
             await interaction.response.send_message(
-                'Пфф, ну и что ты тут пытаешься бросить кого-то, '
-                'когда еще даже не получил права на сервере?',
+                USER_INTERACTION_ANSWERS['delete_true_love_user_err'],
                 ephemeral=True
             )
             return
 
         await remove_true_love(user=user)
         await interaction.response.send_message(
-            '*Смотрит на тебя с отвращением*\n\nВзял и решил '
-            'бросить кого-то — типичное поведение для таких, как ты.',
+            USER_INTERACTION_ANSWERS['deleted_true_love'],
             ephemeral=True
         )
 
@@ -450,12 +445,7 @@ class UserInteractionCog(commands.Cog):
 
         if not waifus:
             await interaction.response.send_message(
-                'Знаешь, я, конечно, не сильно в этом заинтересована, '
-                'но, кажется, ты пытаешься посмотреть ТОП вайфу. '
-                'Однако, как-то все пошло не по плану. Скорее всего никто '
-                'еще не добавлял себе вайфу при помощи команды '
-                '/grant_permission. Но, наверное, '
-                'мне не стоит беспокоиться об этом...',
+                USER_INTERACTION_ANSWERS['top_waifu_err'],
                 ephemeral=True
             )
             return
