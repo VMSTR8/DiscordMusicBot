@@ -2,11 +2,11 @@ import os
 
 import asyncio
 
-import aiohttp
-
 import logging
 
 from datetime import datetime
+
+import aiohttp
 
 import discord
 from discord.ext import commands
