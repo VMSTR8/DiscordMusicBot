@@ -1,6 +1,6 @@
-import aiohttp
-
 import re
+
+import time
 
 import random
 
@@ -9,6 +9,8 @@ from urllib.parse import urlparse
 from typing import Union, List
 
 from collections import deque
+
+import aiohttp
 
 import discord
 from discord import app_commands, Interaction, ButtonStyle
@@ -263,9 +265,24 @@ class UserInteractionCog(commands.Cog):
 
     @commands.Cog.listener()
     async def on_member_join(self, member) -> None:
-        greetings_channel = self.bot.fetch_channel(GREETINGS_CHANNEL)
+        current_hour = time.localtime().tm_hour
+        if 6 <= current_hour < 12:
+            current_hour = 'Ohayou'
+        elif 12 <= current_hour < 18:
+            current_hour = 'Konnichiwa'
+        elif 18 <= current_hour < 23:
+            current_hour = 'Konbanwa'
+        else:
+            current_hour = 'Oyasumi nasai'
+        nickname = member.mention
+        greetings_channel = await self.bot.fetch_channel(GREETINGS_CHANNEL)
         await greetings_channel.send(
-            USER_INTERACTION_ANSWERS['greetings']
+            USER_INTERACTION_ANSWERS[
+                'greetings'
+            ].format(
+                nickname=nickname,
+                current_hour=current_hour
+            )
         )
 
     @app_commands.command(
