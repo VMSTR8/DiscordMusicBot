@@ -44,15 +44,19 @@ class MusicCog(commands.Cog):
 
     def play_check():
         '''
-        A decorator for checking if the user and bot are in the same voice channel before a command.
+        A decorator for checking if the user and bot
+        are in the same voice channel before a command.
 
         Raises:
-            UserVoiceChannelError: If the user is not connected to a voice channel.
-            DifferentVoiceChannelsError: If the user and bot are not in the same voice channel.
+            UserVoiceChannelError: If the user is not
+            connected to a voice channel.
+            DifferentVoiceChannelsError: If the user and bot are not
+            in the same voice channel.
         '''
         async def predicate(interaction: Interaction) -> bool:
             '''
-            Check if the user and bot are in the same voice channel before a command.
+            Check if the user and bot are in the same
+            voice channel before a command.
 
             Args:
                 interaction (Interaction): The interaction context.
@@ -75,16 +79,21 @@ class MusicCog(commands.Cog):
 
     def voice_channel_check():
         '''
-        A decorator for checking if the user and bot are in the same voice channel before a command.
+        A decorator for checking if the user and bot are
+        in the same voice channel before a command.
 
         Raises:
-            UserVoiceChannelError: If the user is not connected to a voice channel.
-            BotVoiceChannelError: If the bot is not connected to a voice channel.
-            DifferentVoiceChannelsError: If the user and bot are not in the same voice channel.
+            UserVoiceChannelError: If the user is not
+            connected to a voice channel.
+            BotVoiceChannelError: If the bot is not
+            connected to a voice channel.
+            DifferentVoiceChannelsError: If the user and bot are
+            not in the same voice channel.
         '''
         async def predicate(interaction: Interaction) -> bool:
             '''
-            Check if the user and bot are in the same voice channel before a command.
+            Check if the user and bot are in the same
+            voice channel before a command.
 
             Args:
                 interaction (Interaction): The interaction context.
@@ -113,7 +122,8 @@ class MusicCog(commands.Cog):
         Handle errors and send appropriate error messages.
 
         Args:
-            interaction (Interaction): The interaction where the error occurred.
+            interaction (Interaction):
+            The interaction where the error occurred.
             error: The error that occurred.
         '''
         if isinstance(error, UserVoiceChannelError):
