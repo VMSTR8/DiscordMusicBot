@@ -17,8 +17,9 @@ from tortoise import run_async, Tortoise
 
 from database.init import init
 
-from cogs.music import MusicCog
-from cogs.user_interaction import UserInteractionCog
+from cogs.music_cog import MusicCog
+from cogs.user_interaction_cog import UserInteractionCog
+from cogs.admin_cog import AdminCog
 
 from settings.settings import (
     BOT_TOKEN,
@@ -29,6 +30,20 @@ from settings.settings import (
 
 
 class DiscordBot(commands.Bot):
+    '''
+    Custom Discord bot class inheriting from `commands.Bot`.
+
+    Attributes:
+        intents (discord.Intents): The intents for the bot's functionality.
+
+    Methods:
+        connect_nodes(): Connects to the Wavelink nodes.
+        setup_hook(): Sets up cogs and syncs commands.
+        on_ready(): Event handler when the bot is ready.
+        on_message(message): Event handler for incoming messages.
+        close_connections(): Closes connections and resources
+        when the bot is shutting down.
+    '''
 
     def __init__(self):
         intents = discord.Intents.all()
@@ -39,6 +54,13 @@ class DiscordBot(commands.Bot):
         super().__init__(intents=intents, command_prefix='!')
 
     async def connect_nodes(self) -> None:
+        '''
+        Connects to Wavelink nodes.
+
+        Raises:
+            aiohttp.client_exceptions.ClientConnectorError:
+            If a connection error occurs.
+        '''
         await self.wait_until_ready()
         try:
             node: wavelink.Node = wavelink.Node(
@@ -54,8 +76,15 @@ class DiscordBot(commands.Bot):
             await self.close()
 
     async def setup_hook(self) -> None:
+        '''
+        Sets up cogs and syncs commands.
+
+        Raises:
+            Exception: If an error occurs during command syncing.
+        '''
         await self.add_cog(MusicCog(bot=self))
         await self.add_cog(UserInteractionCog(bot=self))
+        await self.add_cog(AdminCog(bot=self))
 
         try:
             synced = await self.tree.sync()
@@ -63,7 +92,10 @@ class DiscordBot(commands.Bot):
         except Exception as error:
             logging.error(f'An error occurred during syncing: {error}')
 
-    async def on_ready(self):
+    async def on_ready(self) -> None:
+        '''
+        Event handler when the bot is ready.
+        '''
         logging.info(f'Logged in as {self.user}')
 
         await self.connect_nodes()
@@ -74,14 +106,27 @@ class DiscordBot(commands.Bot):
         )
         await self.change_presence(activity=activity)
 
-    async def on_message(self, message):
+    async def on_message(self, message: discord.Message) -> None:
+        '''
+        Event handler for incoming messages.
+
+        Args:
+            message (discord.Message): The incoming message.
+
+        Note:
+        Deletes the message if it's from a restricted
+        channel and not sent by a bot.
+        '''
         if message.channel.id in [
             int(channel_id)
             for channel_id in MESSAGE_NOT_ALLOWED_TEXT_CHANNELS_ID.split(',')
         ] and not message.author.bot:
             await message.delete()
 
-    async def close_connections(self):
+    async def close_connections(self) -> None:
+        '''
+        Closes connections and resources when the bot is shutting down.
+        '''
         try:
             node: wavelink.Node = wavelink.NodePool.get_node()
             await node._session.close()
@@ -94,7 +139,12 @@ bot = DiscordBot()
 
 
 def main() -> None:
+    '''
+    Main function to start the bot.
 
+    Note:
+        Initializes logging, runs database initialization, and starts the bot.
+    '''
     if not os.path.exists('logs'):
         os.makedirs('logs')
 
