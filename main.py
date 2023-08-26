@@ -133,6 +133,7 @@ class DiscordBot(commands.Bot):
         except wavelink.exceptions.InvalidNode:
             logging.error('No Nodes established')
         await Tortoise.close_connections()
+        await self.close()
 
 
 bot = DiscordBot()
