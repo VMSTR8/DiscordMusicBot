@@ -16,7 +16,8 @@ voice_channel_permissions = {
     'speak': True,
     'stream': True,
     'use_soundboard': True,
-    'request_to_speak': True
+    'request_to_speak': True,
+    'use_voice_activation': True
 }
 
 text_channel_permissions = {
