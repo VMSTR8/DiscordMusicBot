@@ -458,32 +458,74 @@ class UserInteractionCog(commands.Cog):
         )
 
     @app_commands.command(
-        name='show_my_waifus',
-        description='Показать добавленных вайфу'
+        name='show_waifus',
+        description='Посмотреть своих добавленных вайфу '
+        'или вайфу другого пользователя'
     )
-    async def show_my_waifus(self, interaction: Interaction) -> None:
+    @app_commands.describe(
+        user='Никнейм(регистрозависимый!) или юзернейм пользователя, '
+        'вайфу которого ты хочешь посмотреть'
+    )
+    async def show_my_waifus(
+        self,
+        interaction: Interaction,
+        user: str = None
+    ) -> None:
         '''
-        Command to display the list of waifus added by the user.
+        Command to display the list of waifus added
+        by the user or another user.
 
         Args:
             interaction (Interaction): The interaction event triggered.
+            user (str, optional): Username of the user whose
+            waifus are to be displayed.
 
         Returns:
             None
         '''
         await interaction.response.defer()
 
-        discord_id = interaction.user.id
+        bot_names = [
+            interaction.guild.me.display_name,
+            interaction.guild.me.name
+        ]
+
+        if user:
+            discord_id = interaction.guild.get_member_named(user)
+        else:
+            discord_id = interaction.user
         username = interaction.user.display_name
 
-        waifus = await get_user_waifus(discord_id=discord_id)
+        try:
+            waifus = await get_user_waifus(discord_id=discord_id.id)
+        except AttributeError:
+            await interaction.followup.send(
+                USER_INTERACTION_ANSWERS['user_not_found']
+            )
+            return
+
         if not waifus:
+            if user in bot_names:
+                await interaction.followup.send(
+                    USER_INTERACTION_ANSWERS[
+                        'show_bot_waifu'
+                    ]
+                )
+                return
+            if user:
+                await interaction.followup.send(
+                    USER_INTERACTION_ANSWERS[
+                        'show_other_waifu_err'
+                    ].format(username=user)
+                )
+                return
             await interaction.followup.send(
                 USER_INTERACTION_ANSWERS['show_my_waifu_err']
             )
             return
 
-        embed = discord.Embed(title=f'Список вайфу {username}', color=0x334873)
+        embed = discord.Embed(
+            title=f'Список вайфу {discord_id.global_name}', color=0x334873)
 
         for number, waifu_link in enumerate(waifus, start=1):
             waifu = waifu_link.waifu
