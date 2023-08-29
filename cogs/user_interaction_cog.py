@@ -494,7 +494,6 @@ class UserInteractionCog(commands.Cog):
             discord_id = interaction.guild.get_member_named(user)
         else:
             discord_id = interaction.user
-        username = interaction.user.display_name
 
         try:
             waifus = await get_user_waifus(discord_id=discord_id.id)
@@ -539,7 +538,8 @@ class UserInteractionCog(commands.Cog):
             if waifu_link.true_love:
                 field_value = (
                     f'`❤️ TRUE LOVE ❤️` '
-                    f'Выбрана самой любимой вайфу у {username}\n{field_value}'
+                    f'Выбрана самой любимой вайфу у '
+                    f'{discord_id.global_name}\n{field_value}'
                 )
 
             embed.add_field(
