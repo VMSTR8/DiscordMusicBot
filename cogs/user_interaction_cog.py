@@ -425,7 +425,7 @@ class UserInteractionCog(commands.Cog):
         Returns:
             None
         '''
-        await interaction.response.defer()
+        await interaction.response.defer(ephemeral=True)
 
         discord_id = interaction.user.id
         existing_wiafu_list = await check_user_waifu_link_exists(
