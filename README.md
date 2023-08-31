@@ -1,6 +1,6 @@
 # Мультифункциональный чат-бот для Discord
 
-> This project is being developed in Russian language without English localization. If you are interested in adding English or other language localization, please contact me through the contacts provided in the profile.
+> This project is being developed in Russian language without English or any other language localization. If you are interested in adding English or other language localization, please contact me through the contacts provided in the profile.
 
 Чат-бот, который умеет воспроизводить музыку, а так же работает с пользователями при входе участника на сервер. Умеет "регистрировать" на сервере, выдвая права в заданные голосовые каналы. Так как бот создается "тем еще виабушником" для использования на довольно небольшом сервере дискорда, поэтому основной функционал работы с пользователями построен на аниме-тематике.
 
