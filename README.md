@@ -13,7 +13,7 @@
 
 ## Как развернуть бота у себя
 Создайте `docker-compose.yml` со следующим содержимым (не забудьте заменить переменные):
-```Dockerfile
+```Docker
 version: "3.8"
 
 services:
@@ -60,8 +60,8 @@ networks:
         name: lavalink
 ```
 
-Пример DISCORD_TEXT_CATEGORIES_ID и DISCORD_VOICE_CATEGORIES_ID: 01234567890123456789,9876543210987654321
-Можно вписать любое кол-во категорий. Если вам не нужно удалять сообщения в чате, где используются бот-команды, то в MESSAGE_NOT_ALLOWED_TEXT_CHANNELS_ID просто ставьте 0.
+Пример `DISCORD_TEXT_CATEGORIES_ID` и `DISCORD_VOICE_CATEGORIES_ID`: `01234567890123456789,9876543210987654321`
+Можно вписать любое кол-во категорий. Если вам не нужно удалять сообщения в чате, где используются бот-команды, то в `MESSAGE_NOT_ALLOWED_TEXT_CHANNELS_ID` просто ставьте 0.
 
 Версии чат-бота можно найти [по ссылке](https://hub.docker.com/repository/docker/vmstr8/discord-music-bot/general) (tags это и есть версии).
 
