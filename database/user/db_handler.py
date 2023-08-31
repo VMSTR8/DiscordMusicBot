@@ -175,6 +175,7 @@ async def count_waifus() -> Optional[List[List[Any]]]:
         [
             waifu.waifu_name_rus,
             await UserWaifuLink.filter(waifu=waifu).count(),
+            await UserWaifuLink.filter(waifu=waifu, true_love=True).count(),
             waifu.alt_name,
             waifu.url,
             waifu.image,
@@ -184,7 +185,7 @@ async def count_waifus() -> Optional[List[List[Any]]]:
     ]
 
     sorted_waifu_counts = sorted(
-        waifu_counts, key=lambda x: x[1], reverse=True)
+        waifu_counts, key=lambda x: x[1] + x[2], reverse=True)
 
     if not sorted_waifu_counts:
         return None

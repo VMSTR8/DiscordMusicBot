@@ -684,22 +684,27 @@ class UserInteractionCog(commands.Cog):
             embed = discord.Embed(
                 title=f'Самая популярная вайфу сервера:'
                 f'\n{filtered_title.strip()}',
-                url=f'https://shikimori.me{waifus[0][3]}',
+                url=f'https://shikimori.me{waifus[0][4]}',
                 description=f'Так же известна, '
-                f'как: {waifus[0][2]}\n'
-                f'Имя на японском: {waifus[0][5]}\n\n', color=0x334873
+                f'как: {waifus[0][3]}\n'
+                f'Имя на японском: {waifus[0][6]}\n\n', color=0x334873
             )
             embed.set_author(
                 name='ТОП вайфу по кол-ву добавлений пользователями')
 
             for value in waifu_chunk:
                 embed.add_field(
-                    name=f'**{value[0]}**',
-                    value=f'`Кол-во добавлений: '
-                    f'{value[1]}`\n=====================',
+                    name=f'**{value[0].upper()}**\n'
+                    f'https://shikimori.me{value[4]}',
+                    value=f'```Суммарный рейтинг | '
+                    f'{value[1] + value[2]}\n\n'
+                    f'Кол-во добавлений | '
+                    f'{value[1]}\n'
+                    f'Кол-во TRUE LOVE  | '
+                    f'{value[2]}```\n==============================',
                     inline=False
                 )
-            embed.set_thumbnail(url=f'https://shikimori.me{waifus[0][4]}')
+            embed.set_thumbnail(url=f'https://shikimori.me{waifus[0][5]}')
             embeds.append(embed)
 
         view = PaginatorView(embeds)
