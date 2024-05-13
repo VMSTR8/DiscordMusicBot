@@ -192,6 +192,7 @@ async def count_waifus() -> Optional[List[List[Any]]]:
 
     return sorted_waifu_counts
 
+
 async def remove_user_and_userwaifulinks(discord_id: int) -> None:
     """
     Removes a user and all associated user-waifu links.

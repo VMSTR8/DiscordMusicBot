@@ -122,7 +122,9 @@ class MusicCog(commands.Cog):
         name='play',
         description='Воспроизведение/добавление в очередь музыки',
     )
-    @app_commands.describe(song='Напиши название песни или отправь ссылку на песню!')
+    @app_commands.describe(
+        song='Напиши название песни или отправь ссылку на песню!'
+    )
     @play_check()
     async def play(
         self,
@@ -400,8 +402,8 @@ class MusicCog(commands.Cog):
                 current_play = player.current
 
                 queue = ''.join(
-                    [f'{iteration + 1}. {track.author} - {track.title} \n' for iteration,
-                        track in enumerate(player.queue)]
+                    [f'{iteration + 1}. {track.author} - {track.title} \n'
+                     for iteration, track in enumerate(player.queue)]
                 )
 
                 embed = discord.Embed(

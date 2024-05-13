@@ -66,7 +66,7 @@ class DiscordBot(commands.Bot):
         await wavelink.Pool.connect(client=self, nodes=[node])
 
         if node.status == NodeStatus.DISCONNECTED:
-            logging.error(f'An error occurred while connecting nodes')
+            logging.error('An error occurred while connecting nodes')
             await node._session.close()
             await self.close()
 
