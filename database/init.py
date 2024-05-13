@@ -4,7 +4,7 @@ from database import config
 
 
 async def init() -> None:
-    '''
+    """
     Initializes Tortoise ORM and generates database schemas.
 
     Note:
@@ -15,7 +15,7 @@ async def init() -> None:
     Raises:
         tortoise.exceptions.ConfigurationError:
         If there's a configuration error.
-    '''
+    """
     await Tortoise.init(
         db_url=config.DATABASE_URL,
         modules={'models': ['database.user.models', 'aerich.models']}
@@ -24,7 +24,7 @@ async def init() -> None:
     await Tortoise.generate_schemas()
 
 if __name__ == '__main__':
-    '''
+    """
     Entry point for initializing the database and generating schemas.
-    '''
+    """
     run_async(init())

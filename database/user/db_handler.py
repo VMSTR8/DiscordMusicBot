@@ -7,7 +7,7 @@ async def add_waifu_to_user(
         discord_id: int,
         waifu_data: Dict[str, Any]
 ) -> None:
-    '''
+    """
     Adds a waifu to a user's collection.
 
     Args:
@@ -18,7 +18,7 @@ async def add_waifu_to_user(
         If the waifu already exists, creates
         a UserWaifuLink for the user and existing waifu.
         If the waifu doesn't exist, creates a new waifu and UserWaifuLink.
-    '''
+    """
     user, _ = await User.get_or_create(discord_id=discord_id)
 
     waifu_id = waifu_data['id']
@@ -49,7 +49,7 @@ async def add_waifu_to_user(
 
 
 async def check_user_waifu_link_exists(discord_id: int) -> Optional[bool]:
-    '''
+    """
     Checks if a user-waifu link exists for a given user.
 
     Args:
@@ -58,7 +58,7 @@ async def check_user_waifu_link_exists(discord_id: int) -> Optional[bool]:
     Returns:
         Optional[bool]: True if a link exists,
         False if not, None if user doesn't exist.
-    '''
+    """
     user = await User.filter(discord_id=discord_id).first()
     if user:
         return await UserWaifuLink.filter(user_id=user.id).exists()
@@ -67,7 +67,7 @@ async def check_user_waifu_link_exists(discord_id: int) -> Optional[bool]:
 
 
 async def get_user_waifus(discord_id: int) -> Optional[List[UserWaifuLink]]:
-    '''
+    """
     Gets a list of waifus associated with a user.
 
     Args:
@@ -76,7 +76,7 @@ async def get_user_waifus(discord_id: int) -> Optional[List[UserWaifuLink]]:
     Returns:
         Optional[List[UserWaifuLink]]: List of UserWaifuLink
         instances if waifus found, None if not.
-    '''
+    """
     user = await User.get_or_none(discord_id=discord_id)
     if not user:
         return None
@@ -91,7 +91,7 @@ async def get_user_waifus(discord_id: int) -> Optional[List[UserWaifuLink]]:
 
 
 async def get_user(discord_id: int) -> Optional[User]:
-    '''
+    """
     Gets a User instance by Discord ID.
 
     Args:
@@ -99,12 +99,12 @@ async def get_user(discord_id: int) -> Optional[User]:
 
     Returns:
         Optional[User]: User instance if found, None if not.
-    '''
+    """
     return await User.get_or_none(discord_id=discord_id)
 
 
 async def get_waifu_by_url(waifu_url: str) -> Optional[Waifu]:
-    '''
+    """
     Gets a Waifu instance by URL.
 
     Args:
@@ -112,7 +112,7 @@ async def get_waifu_by_url(waifu_url: str) -> Optional[Waifu]:
 
     Returns:
         Optional[Waifu]: Waifu instance if found, None if not.
-    '''
+    """
     return await Waifu.filter(url=waifu_url).first()
 
 
@@ -120,7 +120,7 @@ async def check_user_waifu_connection(
         user: User,
         waifu: Waifu
 ) -> Optional[UserWaifuLink]:
-    '''
+    """
     Checks if a connection exists between a user and a waifu.
 
     Args:
@@ -130,18 +130,18 @@ async def check_user_waifu_connection(
     Returns:
         Optional[UserWaifuLink]: UserWaifuLink instance
         if connection exists, None if not.
-    '''
+    """
     return await UserWaifuLink.get_or_none(user=user.id, waifu=waifu.id)
 
 
 async def set_true_love(user: User, waifu: Waifu) -> None:
-    '''
+    """
     Sets the "true love" status between a user and a waifu.
 
     Args:
         user (User): User instance.
         waifu (Waifu): Waifu instance.
-    '''
+    """
     await UserWaifuLink.filter(user=user.id).update(true_love=False)
     await UserWaifuLink.filter(
         user=user.id,
@@ -150,23 +150,23 @@ async def set_true_love(user: User, waifu: Waifu) -> None:
 
 
 async def remove_true_love(user: User) -> None:
-    '''
+    """
     Removes the "true love" status for a user.
 
     Args:
         user (User): User instance.
-    '''
+    """
     await UserWaifuLink.filter(user=user.id).update(true_love=False)
 
 
 async def count_waifus() -> Optional[List[List[Any]]]:
-    '''
+    """
     Counts the number of users associated with each waifu.
 
     Returns:
         Optional[List[List[Any]]]: A list of waifu information
         with user counts if waifus found, None if not.
-    '''
+    """
     waifus = await Waifu.all()
     if not waifus:
         return None
@@ -191,3 +191,16 @@ async def count_waifus() -> Optional[List[List[Any]]]:
         return None
 
     return sorted_waifu_counts
+
+async def remove_user_and_userwaifulinks(discord_id: int) -> None:
+    """
+    Removes a user and all associated user-waifu links.
+
+    Args:
+        discord_id (int): Discord ID of the user.
+    """
+    user = await User.get_or_none(discord_id=discord_id)
+
+    if user:
+        await UserWaifuLink.filter(user_id=user.id).delete()
+        await user.delete()

@@ -13,12 +13,15 @@
 docker-compose.yml
 
 
-#db
+# db
 *.sqlite3
 db.sqlite3-shm
 db.sqlite3-wal
 *.toml
 migrations/
 
-#logs
+# logs
 logs/
+
+# yml
+application.yml

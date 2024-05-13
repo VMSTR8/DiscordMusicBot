@@ -4,7 +4,7 @@
 
 Чат-бот, который умеет воспроизводить музыку, а так же работает с пользователями при входе участника на сервер. Умеет "регистрировать" на сервере, выдвая права в заданные голосовые каналы. Так как бот создается "тем еще виабушником" для использования на довольно небольшом сервере дискорда, поэтому основной функционал работы с пользователями построен на аниме-тематике.
 
-Стэк: [Python 3.10.8](https://www.python.org/doc/), [Discord.py 2.3.2](https://discordpy.readthedocs.io/en/stable/), [Wavelink 2.6.4](https://wavelink.dev/en/latest/), [Tortoise ORM 0.19.3](https://tortoise.github.io/index.html) [*(tutel!)*](https://youtu.be/oxzEdm29JLw), [Lavalink 3.7.8](https://github.com/lavalink-devs/Lavalink)
+Стэк: [Python 3.10.8](https://www.python.org/doc/), [Discord.py 2.3.2](https://discordpy.readthedocs.io/en/stable/), [Wavelink 3.3.0](https://wavelink.dev/en/latest/), [Tortoise ORM 0.19.3](https://tortoise.github.io/index.html) [*(tutel!)*](https://youtu.be/oxzEdm29JLw), [Lavalink 4.0.5](https://github.com/lavalink-devs/Lavalink)
 
 ## Важная информация
 * Бот не предназначен для добавления более чем на одном сервер дискорда, ибо я писал его исключительно под свой единственный серер. Разворачиваете бота у себя? Помните: один развернутый бот на один сервер.
@@ -14,11 +14,9 @@
 ## Как развернуть бота у себя
 Создайте `docker-compose.yml` со следующим содержимым (не забудьте заменить переменные):
 ```yaml
-version: "3.8"
-
 services:
     lavalink:
-        image: fredboat/lavalink:3.7.8
+        image: fredboat/lavalink:4.0.5
         container_name: lavalink
         restart: unless-stopped
         environment:
@@ -27,6 +25,8 @@ services:
             - SERVER_ADDRESS=0.0.0.0
             - LAVALINK_SERVER_PASSWORD=<придуманный_вами_пароль>
             - LAVALINK_SERVER_SOURCES_HTTP=true
+        volumes:
+        - ./application.yml:/opt/Lavalink/application.yml
         networks:
             - lavalink
         expose:
@@ -60,10 +60,40 @@ networks:
         name: lavalink
 ```
 
+Теперь создайте файл `application.yml`, он необходим для настроек Lavalink плагинов.
+```yaml
+server:
+  port: 2333
+  address: localhost
+lavalink:
+  plugins:
+  - dependency: "dev.lavalink.youtube:youtube-plugin:1.2.0" # можете вписать актуальную версию плагина
+    snapshot: false 
+    youtube:
+      enable: true
+      allowSearch: true
+      allowDirectVideoIds: true
+      allowDirectPlaylistIds: true
+      clients: ["MUSIC", "ANDROID", "WEB"]
+  server:
+    password: "тут_пишите_пароль_от_лавалинка"
+    sources:
+      youtube: false
+      soundcloud: true
+      bandcamp: true
+      twitch: false
+      vimeo: false
+      mixer: false
+      http: true
+  pluginsPath: ./plugins
+
+```
+Начиная с 3.0 версии wavelink использует другой метод поиска музыки на youtube. Для этого скачиаается плагин (автоматически, в Dockerfile уже все прописано) и настраивается в `application.yml`. Настройки указаны выше в примере файла. Сам плагин можете скачать в releases репозитория [по ссылке](https://github.com/lavalink-devs/youtube-source).
+
 Пример `DISCORD_TEXT_CATEGORIES_ID` и `DISCORD_VOICE_CATEGORIES_ID`: `01234567890123456789,9876543210987654321`
 
 Можно вписать любое кол-во категорий. Если вам не нужно удалять сообщения в чате, где используются бот-команды, то в `MESSAGE_NOT_ALLOWED_TEXT_CHANNELS_ID` просто ставьте 0.
 
 Версии чат-бота можно найти [по ссылке](https://hub.docker.com/repository/docker/vmstr8/discord-music-bot/general) (tags это и есть версии).
 
-После создания файла пропишите в консоле команду `docker-compose up -d`. Бот должен запуститься. Смотрите [Docker Compose Up](https://github.com/lavalink-devs/Lavalink#:~:text=d.%20See-,Docker%20Compose%20Up,-If%20your%20bot).
+После создания файлов пропишите в консоле команду `docker-compose up -d`. Бот должен запуститься. Смотрите [Docker Compose Up](https://github.com/lavalink-devs/Lavalink#:~:text=d.%20See-,Docker%20Compose%20Up,-If%20your%20bot).

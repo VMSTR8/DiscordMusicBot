@@ -11,3 +11,7 @@ class BotVoiceChannelError(CheckFailure):
 
 class DifferentVoiceChannelsError(CheckFailure):
     pass
+
+
+class BotCalledFromDirectMessageError(CheckFailure):
+    pass

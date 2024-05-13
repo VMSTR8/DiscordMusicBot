@@ -3,7 +3,7 @@ from tortoise import fields
 
 
 class User(Model):
-    '''
+    """
     Model class representing a Discord user.
 
     Attributes:
@@ -14,7 +14,7 @@ class User(Model):
 
     Methods:
         __str__(): Returns a string representation of the user.
-    '''
+    """
     id = fields.IntField(pk=True)
     discord_id = fields.IntField(unique=True)
 
@@ -25,7 +25,7 @@ class User(Model):
 
 
 class Waifu(Model):
-    '''
+    """
     Model class representing a waifu character.
 
     Attributes:
@@ -42,7 +42,7 @@ class Waifu(Model):
 
     Methods:
         __str__(): Returns a string representation of the waifu.
-    '''
+    """
     id = fields.IntField(pk=True)
     shikimori_id = fields.IntField()
     waifu_name = fields.CharField(max_length=255)
@@ -59,7 +59,7 @@ class Waifu(Model):
 
 
 class UserWaifuLink(Model):
-    '''
+    """
     Model class representing a link between a user and a waifu.
 
     Attributes:
@@ -75,7 +75,7 @@ class UserWaifuLink(Model):
 
     Methods:
         __str__(): Returns a string representation of the link.
-    '''
+    """
     id = fields.IntField(pk=True)
     user = fields.ForeignKeyField("models.User", related_name="waifu_links")
     waifu = fields.ForeignKeyField("models.Waifu", related_name="user_links")

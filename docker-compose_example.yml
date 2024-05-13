@@ -1,0 +1,44 @@
+services:
+    lavalink:
+        image: fredboat/lavalink:4.0.5
+        container_name: lavalink
+        restart: unless-stopped
+        environment:
+            - _JAVA_OPTIONS=-Xmx6G
+            - SERVER_PORT=2333
+            - SERVER_ADDRESS=0.0.0.0
+            - LAVALINK_SERVER_PASSWORD=myveryhardpassword
+            - LAVALINK_SERVER_SOURCES_HTTP=true
+        volumes:
+            - ./application.yml:/opt/Lavalink/application.yml
+        networks:
+            - lavalink
+        expose:
+            - 2333
+        ports:
+            - 2333:2333
+    
+    discordbot:
+        image: vmstr8/discord-music-bot-amd64:type_here_version_of_the_bot
+        container_name: discordbot
+        restart: unless-stopped
+        depends_on:
+            - lavalink
+        networks:
+        - lavalink
+        volumes:
+        - ./data/:/discordbot/data/
+        - ./entrypoint.sh:/discordbot/entrypoint.sh
+        environment:
+        - BOT_TOKEN=discord_bot_token
+        - WAVELINK_URI=http://your_lavalink_uri:your_lavalink_port
+        - WAVELINK_PASSWORD=myveryhardpassword
+        - DATABASE_URL=sqlite://data/db.sqlite3
+        - DISCORD_TEXT_CATEGORIES_ID=1234567890,0987654321
+        - MESSAGE_NOT_ALLOWED_TEXT_CHANNELS_ID=1234567890
+        - GREETINGS_CHANNEL=1234567890
+        - DISCORD_VOICE_CATEGORIES_ID=1234567890
+
+networks:
+    lavalink:
+        name: lavalink

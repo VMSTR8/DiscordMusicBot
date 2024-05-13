@@ -2,38 +2,23 @@ import logging
 
 from discord import app_commands, Interaction
 from discord.ext import commands
-from discord.app_commands.errors import MissingPermissions
+
+from error_handlers.errors import error_handler
 
 
 class AdminCog(commands.Cog):
-    '''
+    """
     A cog containing administrative commands.
-    '''
+    """
 
     def __init__(self, bot: commands.Bot) -> None:
-        '''
+        """
         Initialize the AdminCog.
 
         Args:
             bot (commands.Bot): The bot instance.
-        '''
+        """
         self.bot = bot
-
-    async def error_handler(self, interaction: Interaction, error) -> None:
-        '''
-        Error handler for the send_message command.
-
-        Args:
-            interaction (Interaction): The interaction context.
-            error: The error raised.
-        '''
-        if isinstance(error, MissingPermissions):
-            await interaction.response.send_message(
-                '*Смотрит на тебя с презрением* У тебя даже '
-                'прав администратора нет, а ты пытаешься '
-                'воспользоваться этой командой...',
-                ephemeral=True
-            )
 
     @app_commands.command(
         name='send_message',
@@ -54,7 +39,7 @@ class AdminCog(commands.Cog):
         message: str = None,
         message_id: str = None
     ) -> None:
-        '''
+        """
         Command to send a message on behalf of the bot
         to the specified channel.
 
@@ -65,7 +50,7 @@ class AdminCog(commands.Cog):
             Defaults to None.
             message_id (str, optional): The ID of the message
             to forward. Defaults to None.
-        '''
+        """
         await interaction.response.defer(ephemeral=True)
 
         if not message and not message_id:
@@ -124,14 +109,14 @@ class AdminCog(commands.Cog):
         self,
         interaction: Interaction, error
     ) -> None:
-        '''
+        """
         Error handler for the send_message command.
 
         Args:
             interaction (Interaction): The interaction context.
             error: The error raised.
-        '''
-        await self.error_handler(interaction, error)
+        """
+        await error_handler(interaction, error)
 
     @app_commands.command(
         name='edit_bot_message',
@@ -153,7 +138,7 @@ class AdminCog(commands.Cog):
         message: str = None,
         message_id: str = None
     ) -> None:
-        '''
+        """
         Command to edit a message sent by the bot.
 
         Args:
@@ -163,7 +148,7 @@ class AdminCog(commands.Cog):
             message content. Defaults to None.
             message_id (str, optional): The ID of the message
             to copy content from. Defaults to None.
-        '''
+        """
         await interaction.response.defer(ephemeral=True)
 
         if not message and not message_id:
@@ -232,11 +217,11 @@ class AdminCog(commands.Cog):
         self,
         interaction: Interaction, error
     ) -> None:
-        '''
+        """
         Error handler for the edit_bot_message command.
 
         Args:
             interaction (Interaction): The interaction context.
             error: The error raised.
-        '''
-        await self.error_handler(interaction, error)
+        """
+        await error_handler(interaction, error)

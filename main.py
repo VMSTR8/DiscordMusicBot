@@ -6,12 +6,11 @@ import logging
 
 from datetime import datetime
 
-import aiohttp
-
 import discord
 from discord.ext import commands
 
 import wavelink
+from wavelink import NodeStatus
 
 from tortoise import run_async, Tortoise
 
@@ -30,7 +29,7 @@ from settings.settings import (
 
 
 class DiscordBot(commands.Bot):
-    '''
+    """
     Custom Discord bot class inheriting from `commands.Bot`.
 
     Attributes:
@@ -43,7 +42,7 @@ class DiscordBot(commands.Bot):
         on_message(message): Event handler for incoming messages.
         close_connections(): Closes connections and resources
         when the bot is shutting down.
-    '''
+    """
 
     def __init__(self):
         intents = discord.Intents.all()
@@ -54,34 +53,30 @@ class DiscordBot(commands.Bot):
         super().__init__(intents=intents, command_prefix='!')
 
     async def connect_nodes(self) -> None:
-        '''
+        """
         Connects to Wavelink nodes.
-
-        Raises:
-            aiohttp.client_exceptions.ClientConnectorError:
-            If a connection error occurs.
-        '''
+        """
         await self.wait_until_ready()
-        try:
-            node: wavelink.Node = wavelink.Node(
-                uri=WAVELINK_URI,
-                password=WAVELINK_PASSWORD,
-                secure=False,
-                retries=5
-            )
-            await wavelink.NodePool.connect(client=self, nodes=[node])
-        except aiohttp.client_exceptions.ClientConnectorError as error:
-            logging.error(f'An error occurred while connecting nodes: {error}')
+
+        node: wavelink.Node = wavelink.Node(
+            uri=WAVELINK_URI,
+            password=WAVELINK_PASSWORD,
+            retries=5
+        )
+        await wavelink.Pool.connect(client=self, nodes=[node])
+
+        if node.status == NodeStatus.DISCONNECTED:
+            logging.error(f'An error occurred while connecting nodes')
             await node._session.close()
             await self.close()
 
     async def setup_hook(self) -> None:
-        '''
+        """
         Sets up cogs and syncs commands.
 
         Raises:
             Exception: If an error occurs during command syncing.
-        '''
+        """
         await self.add_cog(MusicCog(bot=self))
         await self.add_cog(UserInteractionCog(bot=self))
         await self.add_cog(AdminCog(bot=self))
@@ -93,9 +88,9 @@ class DiscordBot(commands.Bot):
             logging.error(f'An error occurred during syncing: {error}')
 
     async def on_ready(self) -> None:
-        '''
+        """
         Event handler when the bot is ready.
-        '''
+        """
         logging.info(f'Logged in as {self.user}')
 
         await self.connect_nodes()
@@ -107,7 +102,7 @@ class DiscordBot(commands.Bot):
         await self.change_presence(activity=activity)
 
     async def on_message(self, message: discord.Message) -> None:
-        '''
+        """
         Event handler for incoming messages.
 
         Args:
@@ -116,7 +111,7 @@ class DiscordBot(commands.Bot):
         Note:
         Deletes the message if it's from a restricted
         channel and not sent by a bot.
-        '''
+        """
         if message.channel.id in [
             int(channel_id)
             for channel_id in MESSAGE_NOT_ALLOWED_TEXT_CHANNELS_ID.split(',')
@@ -124,13 +119,13 @@ class DiscordBot(commands.Bot):
             await message.delete()
 
     async def close_connections(self) -> None:
-        '''
+        """
         Closes connections and resources when the bot is shutting down.
-        '''
+        """
         try:
-            node: wavelink.Node = wavelink.NodePool.get_node()
+            node: wavelink.Node = wavelink.Pool.get_node()
             await node._session.close()
-        except wavelink.exceptions.InvalidNode:
+        except wavelink.exceptions.InvalidNodeException:
             logging.error('No Nodes established')
         await Tortoise.close_connections()
         await self.close()
@@ -140,12 +135,12 @@ bot = DiscordBot()
 
 
 def main() -> None:
-    '''
+    """
     Main function to start the bot.
 
     Note:
         Initializes logging, runs database initialization, and starts the bot.
-    '''
+    """
     if not os.path.exists('logs'):
         os.makedirs('logs')
 

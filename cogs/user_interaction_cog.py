@@ -10,11 +10,19 @@ from typing import Optional, List, Dict, Any
 
 from collections import deque
 
+import logging
+
 import aiohttp
 
 import discord
 from discord import app_commands, Interaction, ButtonStyle
 from discord.ext import commands
+from discord.errors import Forbidden
+
+from error_handlers.errors import (
+    error_handler,
+    user_interaction_check,
+)
 
 from database.user.db_handler import (
     add_waifu_to_user,
@@ -26,6 +34,7 @@ from database.user.db_handler import (
     set_true_love,
     remove_true_love,
     count_waifus,
+    remove_user_and_userwaifulinks,
 )
 
 from cogs.config import (
@@ -44,7 +53,7 @@ from cogs.answers import USER_INTERACTION_ANSWERS
 
 
 class PaginatorView(discord.ui.View):
-    '''
+    """
     A custom paginator view for displaying embeds with navigation buttons.
 
     Attributes:
@@ -53,15 +62,15 @@ class PaginatorView(discord.ui.View):
         _initial (discord.Embed): The initial embed to display.
         _len (int): The total number of embeds.
         _current_page (int): The current page being displayed.
-    '''
+    """
 
     def __init__(self, embeds: List[discord.Embed]) -> None:
-        '''
+        """
         Initialize the PaginatorView.
 
         Args:
             embeds (List[discord.Embed]): List of embeds to display.
-        '''
+        """
 
         super().__init__(timeout=300)
 
@@ -80,11 +89,11 @@ class PaginatorView(discord.ui.View):
         )
 
     async def on_timeout(self) -> None:
-        '''
+        """
         Handle the timeout event when no interaction happens.
 
         Updates the message with a timeout message and removes the view.
-        '''
+        """
         embed = discord.Embed(
             title='Время истекло - ТОП вайфу был закрыт',
             description='Чтобы еще раз посмотреть рейтинг '
@@ -94,12 +103,12 @@ class PaginatorView(discord.ui.View):
         await self.message.edit(embed=embed, view=None)
 
     async def update_buttons(self, interaction: Interaction) -> None:
-        '''
+        """
         Update the navigation buttons based on the current state.
 
         Args:
             interaction (Interaction): The interaction event triggered.
-        '''
+        """
         for i in self._queue:
             i.set_footer(
                 text=f'Текущая страница: {self._current_page} из {self._len}')
@@ -121,13 +130,13 @@ class PaginatorView(discord.ui.View):
         emoji='⏮'
     )
     async def previous(self, interaction: Interaction, _) -> None:
-        '''
+        """
         Handle the action of going to the previous page.
 
         Args:
             interaction (Interaction): The interaction event triggered.
             _ (Any): Unused parameter.
-        '''
+        """
         self._queue.rotate(1)
         embed = self._queue[0]
         self._current_page -= 1
@@ -140,13 +149,13 @@ class PaginatorView(discord.ui.View):
         emoji='⏭'
     )
     async def next(self, interaction: Interaction, _) -> None:
-        '''
+        """
         Handle the action of going to the next page.
 
         Args:
             interaction (Interaction): The interaction event triggered.
             _ (Any): Unused parameter.
-        '''
+        """
         self._queue.rotate(-1)
         embed = self._queue[0]
         self._current_page += 1
@@ -155,27 +164,27 @@ class PaginatorView(discord.ui.View):
 
     @property
     def initial(self) -> discord.Embed:
-        '''
+        """
         Get the initial embed for the PaginatorView.
 
         Returns:
             discord.Embed: The initial embed.
-        '''
+        """
         return self._initial
 
 
 class UserInteractionCog(commands.Cog):
-    '''
+    """
     A cog for user interaction commands.
-    '''
+    """
 
     def __init__(self, bot: commands.Bot) -> None:
-        '''
+        """
         Initialize the UserInteractionCog.
 
         Args:
             bot (commands.Bot): The Discord bot instance.
-        '''
+        """
         self.bot = bot
         self.shikimore_chars = re.compile(
             r'''
@@ -191,7 +200,7 @@ class UserInteractionCog(commands.Cog):
             interaction: Interaction,
             role: str
     ) -> Optional[discord.Role]:
-        '''
+        """
         Check if a role with the given name exists in the guild.
 
         Args:
@@ -200,7 +209,7 @@ class UserInteractionCog(commands.Cog):
 
         Returns:
             Optional[discord.Role]: The role if it exists, else None.
-        '''
+        """
         return discord.utils.get(
             interaction.guild.roles,
             name=role.lower().strip()
@@ -210,7 +219,7 @@ class UserInteractionCog(commands.Cog):
         self,
         character_id: int
     ) -> Optional[Dict[str, Any]]:
-        '''
+        """
         Get character data from Shikimori API.
 
         Args:
@@ -218,7 +227,7 @@ class UserInteractionCog(commands.Cog):
 
         Returns:
             Optional[Dict[str, Any]]: Character data if found, else None.
-        '''
+        """
         try:
             async with aiohttp.ClientSession() as session:
                 response = await session.get(
@@ -236,7 +245,7 @@ class UserInteractionCog(commands.Cog):
             interaction: Interaction,
             role_name: str
     ) -> None:
-        '''
+        """
         Create a role for the user and set permissions for channels.
 
         Args:
@@ -245,7 +254,7 @@ class UserInteractionCog(commands.Cog):
 
         Returns:
             None
-        '''
+        """
         new_role = await interaction.guild.create_role(
             name=role_name.lower().strip(),
             color=discord.Color(random.randint(0, 0xFFFFFF)),
@@ -290,7 +299,7 @@ class UserInteractionCog(commands.Cog):
             role: str,
             urls: List[str]
     ) -> None:
-        '''
+        """
         Perform necessary checks before granting permission to the user.
 
         Args:
@@ -300,7 +309,7 @@ class UserInteractionCog(commands.Cog):
 
         Returns:
             None
-        '''
+        """
         if len(urls) != 5:
             await interaction.followup.send(
                 USER_INTERACTION_ANSWERS['url_len_err']
@@ -325,6 +334,8 @@ class UserInteractionCog(commands.Cog):
             )
             return
 
+        to_add = []
+
         for url in valid_urls:
             character_id = re.search(self.shikimore_chars, url).group(2)
             character_id = re.sub(r'\D', '', character_id)
@@ -341,11 +352,10 @@ class UserInteractionCog(commands.Cog):
                         ].format(url=url)
                     )
                     return
+
                 elif character['status'] in [200, 302]:
-                    await add_waifu_to_user(
-                        discord_id=discord_id,
-                        waifu_data=waifu_data
-                    )
+                    to_add.append(waifu_data)
+
                 else:
                     await interaction.followup.send(
                         USER_INTERACTION_ANSWERS['shikimori_unknown_message']
@@ -357,14 +367,33 @@ class UserInteractionCog(commands.Cog):
                 )
                 return
 
+        for data in to_add:
+            await add_waifu_to_user(
+                discord_id=discord_id,
+                waifu_data=data
+            )
+
         await self.create_role_and_permission(
             interaction=interaction,
             role_name=role
         )
 
+    async def remove_unused_roles(self) -> None:
+        """
+        Remove roles that are not assigned to any member in the guild.
+
+        Returns:
+            None
+        """
+        guilds = self.bot.guilds
+        for guild in guilds:
+            for role in guild.roles:
+                if len(role.members) == 0:
+                    await role.delete()
+
     @commands.Cog.listener()
     async def on_member_join(self, member: discord.Member) -> None:
-        '''
+        """
         Event handler for when a member joins the server.
 
         Args:
@@ -372,7 +401,7 @@ class UserInteractionCog(commands.Cog):
 
         Returns:
             None
-        '''
+        """
         current_hour = time.localtime().tm_hour
         if 6 <= current_hour < 12:
             current_hour = 'Ohayou'
@@ -390,41 +419,67 @@ class UserInteractionCog(commands.Cog):
             ].format(
                 nickname=nickname,
                 current_hour=current_hour
-            )
+            ),
+            suppress_embeds=True
+        )
+
+    @commands.Cog.listener()
+    async def on_member_remove(
+        self,
+        member: discord.Member,
+    ) -> None:
+        """
+        Event handler for when a member leaves the server.
+
+        Args:
+            member (discord.Member): The member who left the server.
+
+        Returns:
+            None
+        """
+
+        try:
+            await self.remove_unused_roles()
+        except Forbidden as error:
+            logging.exception(error)
+
+        await remove_user_and_userwaifulinks(
+            discord_id=member.id
         )
 
     @app_commands.command(
         name='grant_permission',
         description='Отправить список из 5 вайфу с сайта '
-        'shikimori.me для получения доступа в голосовые каналы'
+        'shikimori.one для получения доступа в голосовые каналы'
     )
     @app_commands.describe(
         role='Напиши название своей роли, '
         'которую я создам и присвою тебе',
         shikimori_urls='Ссылки на 5 вайфу с сайта '
-        'shikimori.me через запятую'
+        'shikimori.one через запятую'
     )
+    @user_interaction_check()
     async def grant_permission(
             self,
             interaction: Interaction,
             role: str,
             *,
             shikimori_urls: str) -> None:
-        '''
+        """
         Command to request granting permission to access
         voice channels by submitting a list
-        of 5 waifus from the shikimori.me website.
+        of 5 waifus from the shikimori.one website.
 
         Args:
             interaction (Interaction): The interaction event triggered.
             role (str): The name of the role that will be created
             and assigned to the user.
-            shikimori_urls (str): Links to 5 waifus from shikimori.me,
+            shikimori_urls (str): Links to 5 waifus from shikimori.one,
             separated by commas.
 
         Returns:
             None
-        '''
+        """
         await interaction.response.defer(ephemeral=True)
 
         discord_id = interaction.user.id
@@ -457,6 +512,14 @@ class UserInteractionCog(commands.Cog):
             urls=urls
         )
 
+    @grant_permission.error
+    async def grant_permission_error(
+        self,
+        interaction: Interaction,
+        error
+    ) -> None:
+        await error_handler(interaction, error)
+
     @app_commands.command(
         name='show_waifus',
         description='Посмотреть своих добавленных вайфу '
@@ -466,12 +529,13 @@ class UserInteractionCog(commands.Cog):
         user='Никнейм(регистрозависимый!) или юзернейм пользователя, '
         'вайфу которого ты хочешь посмотреть'
     )
+    @user_interaction_check()
     async def show_my_waifus(
         self,
         interaction: Interaction,
         user: str = None
     ) -> None:
-        '''
+        """
         Command to display the list of waifus added
         by the user or another user.
 
@@ -482,7 +546,7 @@ class UserInteractionCog(commands.Cog):
 
         Returns:
             None
-        '''
+        """
         await interaction.response.defer()
 
         bot_names = [
@@ -529,7 +593,7 @@ class UserInteractionCog(commands.Cog):
         for number, waifu_link in enumerate(waifus, start=1):
             waifu = waifu_link.waifu
             field_value = (
-                f'Ссылка: https://shikimori.me{waifu.url}\n'
+                f'Ссылка: https://shikimori.one{waifu.url}\n'
                 f'Еще известна, как: {waifu.alt_name}\n'
                 f'Имя на японском: {waifu.japanese_name}\n'
                 f'Shikimori ID: {waifu.shikimori_id}'
@@ -557,6 +621,14 @@ class UserInteractionCog(commands.Cog):
             embed=embed
         )
 
+    @show_my_waifus.error
+    async def show_my_waifus_error(
+        self,
+        interaction: Interaction,
+        error
+    ) -> None:
+        await error_handler(interaction, error)
+
     @app_commands.command(
         name='true_love',
         description='Добавить лейбл True Love для одной из твоих вайфу'
@@ -564,12 +636,13 @@ class UserInteractionCog(commands.Cog):
     @app_commands.describe(
         waifu_url='Отправь ссылку на ранее добавленную вайфу'
     )
+    @user_interaction_check()
     async def true_love(
         self,
         interaction:
         Interaction, waifu_url: str
     ) -> None:
-        '''
+        """
         Command to set the True Love label for a specific waifu.
 
         Args:
@@ -578,7 +651,7 @@ class UserInteractionCog(commands.Cog):
 
         Returns:
             None
-        '''
+        """
         waifu_url = urlparse(waifu_url)
         discord_id = interaction.user.id
         user = await get_user(discord_id=discord_id)
@@ -617,13 +690,22 @@ class UserInteractionCog(commands.Cog):
             ephemeral=True
         )
 
+    @true_love.error
+    async def true_love_error(
+        self,
+        interaction: Interaction,
+        error
+    ) -> None:
+        await error_handler(interaction, error)
+
     @app_commands.command(
         name='delete_true_love',
         description='Удалить лейбл True Love, установленный '
         'на одной из твоих вайфу'
     )
+    @user_interaction_check()
     async def delete_true_love(self, interaction: Interaction) -> None:
-        '''
+        """
         Command to remove the True Love label from a waifu.
 
         Args:
@@ -631,7 +713,7 @@ class UserInteractionCog(commands.Cog):
 
         Returns:
             None
-        '''
+        """
         discord_id = interaction.user.id
         user = await get_user(discord_id=discord_id)
 
@@ -648,13 +730,22 @@ class UserInteractionCog(commands.Cog):
             ephemeral=True
         )
 
+    @delete_true_love.error
+    async def delete_true_love_error(
+        self,
+        interaction: Interaction,
+        error
+    ) -> None:
+        await error_handler(interaction, error)
+
     @app_commands.command(
         name='top_waifu',
         description='Показать рейтинг вайфу по '
         'кол-ву добавлений пользователями'
     )
+    @user_interaction_check()
     async def top_waifu(self, interaction: Interaction) -> None:
-        '''
+        """
         Command to display the top waifus
         based on the number of user additions.
 
@@ -663,7 +754,7 @@ class UserInteractionCog(commands.Cog):
 
         Returns:
             None
-        '''
+        """
         waifus = await count_waifus()
         string_to_add = ['🥇', '🥈', '🥉']
 
@@ -684,7 +775,7 @@ class UserInteractionCog(commands.Cog):
             embed = discord.Embed(
                 title=f'Самая популярная вайфу сервера:'
                 f'\n{filtered_title.strip()}',
-                url=f'https://shikimori.me{waifus[0][4]}',
+                url=f'https://shikimori.one{waifus[0][4]}',
                 description=f'Так же известна, '
                 f'как: {waifus[0][3]}\n'
                 f'Имя на японском: {waifus[0][6]}\n\n', color=0x334873
@@ -695,7 +786,7 @@ class UserInteractionCog(commands.Cog):
             for value in waifu_chunk:
                 embed.add_field(
                     name=f'**{value[0].upper()}**\n'
-                    f'https://shikimori.me{value[4]}',
+                    f'https://shikimori.one{value[4]}',
                     value=f'```Суммарный рейтинг | '
                     f'{value[1] + value[2]}\n\n'
                     f'Кол-во добавлений | '
@@ -704,9 +795,17 @@ class UserInteractionCog(commands.Cog):
                     f'{value[2]}```\n==============================',
                     inline=False
                 )
-            embed.set_thumbnail(url=f'https://shikimori.me{waifus[0][5]}')
+            embed.set_thumbnail(url=f'https://shikimori.one{waifus[0][5]}')
             embeds.append(embed)
 
         view = PaginatorView(embeds)
         await interaction.response.send_message(embed=view.initial, view=view)
         view.message = await interaction.original_response()
+
+    @top_waifu.error
+    async def top_waifu_error(
+        self,
+        interaction: Interaction,
+        error
+    ) -> None:
+        await error_handler(interaction, error)
