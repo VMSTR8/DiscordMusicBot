@@ -67,7 +67,7 @@ server:
   address: localhost
 lavalink:
   plugins:
-  - dependency: "dev.lavalink.youtube:youtube-plugin:1.2.0" # можете вписать актуальную версию плагина
+  - dependency: "dev.lavalink.youtube:youtube-plugin:1.3.0"
     snapshot: false 
     youtube:
       enable: true
