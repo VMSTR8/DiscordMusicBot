@@ -139,6 +139,8 @@ jobs:
         uses: docker/metadata-action@v4
         with:
           images: vmstr8/discord-music-bot
+        tags: |
+          type=sha,enable=true,priority=100,prefix=foot-,suffix=-fetish,format=short
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v3
