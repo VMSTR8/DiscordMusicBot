@@ -36,8 +36,8 @@ WORKDIR /discordbot
 # Установка переменной среды для отключения установки бинарных версий pydantic
 ENV PIP_NO_BINARY=pydantic
 
-# Установка зависимостей cython и pydantic
-RUN pip install cython pydantic && pip install --no-index --find-links=/discordbot/wheels -r requirements.txt
+# Установка зависимостей, cython и pydantic
+RUN pip install -U pip && pip install --no-index --find-links=/discordbot/wheels -r requirements.txt
 
 # Установка точки входа для контейнера
 ENTRYPOINT ["/discordbot/entrypoint.sh"]
