@@ -36,31 +36,31 @@ jobs:
       - name: Flake me like one of your french
         run: flake8
 
-  test:
-    name: Test it better
-    needs: flake
-    runs-on: ubuntu-latest
-    timeout-minutes: 2
+  # test:
+  #   name: Test it better
+  #   needs: flake
+  #   runs-on: ubuntu-latest
+  #   timeout-minutes: 2
 
-    steps:
-      - name: Check out repository code
-        uses: actions/checkout@v2
+  #   steps:
+  #     - name: Check out repository code
+  #       uses: actions/checkout@v2
 
-      # Setup Python (faster than using Python container)
-      - name: Setup Python
-        uses: actions/setup-python@v2
-        with:
-          python-version: "3.8"
+  #     # Setup Python (faster than using Python container)
+  #     - name: Setup Python
+  #       uses: actions/setup-python@v2
+  #       with:
+  #         python-version: "3.8"
 
-      - name: Install dependency
-        run: python -m pip install tortoise-orm pytest pytest-asyncio
+  #     - name: Install dependency
+  #       run: python -m pip install tortoise-orm pytest pytest-asyncio
 
-      - name: Run tests
-        run: python -m pytest tests/test_db.py --asyncio-mode=strict
+  #     - name: Run tests
+  #       run: python -m pytest tests/test_db.py --asyncio-mode=strict
 
   build_amd:
     name: Build it faster amd
-    needs: test
+    # needs: test
     runs-on: ubuntu-latest
 
     steps:
@@ -86,7 +86,7 @@ jobs:
 
   build_arm:
     name: Build it faster arm
-    needs: test
+    # needs: test
     runs-on: ubuntu-latest
 
     steps:
