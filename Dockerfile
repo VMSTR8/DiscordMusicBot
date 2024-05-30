@@ -20,6 +20,7 @@ RUN chmod +x /discordbot/entrypoint.sh
 
 # Проверка наличия файла плагина и его скачивание с GitHub при необходимости
 RUN if [ ! -f "/discordbot/plugins/youtube-plugin-1.3.0.jar" ]; then \
+    mkdir -p plugins && \
     wget -O /discordbot/plugins/youtube-plugin-1.3.0.jar https://github.com/lavalink-devs/youtube-source/releases/download/1.3.0/youtube-plugin-1.3.0.jar; \
     fi
 
