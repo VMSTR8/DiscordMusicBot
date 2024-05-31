@@ -70,7 +70,7 @@ class MusicCog(commands.Cog):
         embed = discord.Embed(
             title='Сейчас играет',
             description=description,
-            color=0x334873
+            color=0x9966cc
         )
 
         if track.artwork:
@@ -360,7 +360,7 @@ class MusicCog(commands.Cog):
 
             embed = discord.Embed(title='Сейчас играет',
                                   description=track.title,
-                                  color=0x334873)
+                                  color=0x9966cc)
             embed.add_field(name='Продолжительность',
                             value=f"`{track_duration}`", inline=True)
             embed.add_field(name='Очередь',
@@ -409,7 +409,7 @@ class MusicCog(commands.Cog):
                 embed = discord.Embed(
                     title='Очередь воспроизведения',
                     description=f'Сейчас играет: `{current_play.title}`',
-                    color=0x334873
+                    color=0x9966cc
                 )
                 embed.add_field(name='10 следующих треков',
                                 value=f'`{queue}`', inline=True)

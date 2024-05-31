@@ -98,7 +98,7 @@ class PaginatorView(discord.ui.View):
             title='Время истекло - ТОП вайфу был закрыт',
             description='Чтобы еще раз посмотреть рейтинг '
             'вызови команду /top_waifu',
-            color=0x334873
+            color=0x9966cc
         )
         await self.message.edit(embed=embed, view=None)
 
@@ -588,7 +588,7 @@ class UserInteractionCog(commands.Cog):
             return
 
         embed = discord.Embed(
-            title=f'Список вайфу {discord_id.global_name}', color=0x334873)
+            title=f'Список вайфу {discord_id.global_name}', color=0x9966cc)
 
         for number, waifu_link in enumerate(waifus, start=1):
             waifu = waifu_link.waifu
@@ -778,7 +778,7 @@ class UserInteractionCog(commands.Cog):
                 url=f'https://shikimori.one{waifus[0][4]}',
                 description=f'Так же известна, '
                 f'как: {waifus[0][3]}\n'
-                f'Имя на японском: {waifus[0][6]}\n\n', color=0x334873
+                f'Имя на японском: {waifus[0][6]}\n\n', color=0x9966cc
             )
             embed.set_author(
                 name='ТОП вайфу по кол-ву добавлений пользователями')
