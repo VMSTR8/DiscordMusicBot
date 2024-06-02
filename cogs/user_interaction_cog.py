@@ -981,6 +981,18 @@ class UserInteractionCog(commands.Cog):
                 ephemeral=True
             )
             return
+        
+        if await self.is_role_exist(
+            interaction=interaction,
+            role=new_role_name
+        ):
+            await interaction.response.send_message(
+                USER_INTERACTION_ANSWERS[
+                    'role_already_exists'
+                ].format(role=new_role_name.capitalize()),
+                ephemeral=True
+            )
+            return
 
         try:
             await guild_role.edit(name=new_role_name)
