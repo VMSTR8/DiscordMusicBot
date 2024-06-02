@@ -639,8 +639,8 @@ class UserInteractionCog(commands.Cog):
     @user_interaction_check()
     async def true_love(
         self,
-        interaction:
-        Interaction, waifu_url: str
+        interaction: Interaction,
+        waifu_url: str
     ) -> None:
         """
         Command to set the True Love label for a specific waifu.
@@ -804,6 +804,213 @@ class UserInteractionCog(commands.Cog):
 
     @top_waifu.error
     async def top_waifu_error(
+        self,
+        interaction: Interaction,
+        error
+    ) -> None:
+        await error_handler(interaction, error)
+
+    @app_commands.command(
+        name='change_role_color',
+        description='Изменить цвет  '
+        'своей роли'
+    )
+    @app_commands.describe(
+        role_name='Подтверди смену цвета, '
+        'написав сюда название своей роли'
+    )
+    @app_commands.describe(
+        color='Напиши сюда HEX код цвета, '
+        'например: #9966CC'
+    )
+    @user_interaction_check()
+    async def change_role_color(
+        self,
+        interaction: Interaction,
+        role_name: str,
+        color: str
+    ) -> None:
+        """
+        Command to change the color of a user's role.
+
+        Args:
+            interaction (Interaction): The interaction event triggered.
+            role_name (str): The name of the role to change the color.
+            color (str): The HEX color code to apply.
+
+        Returns:
+            None
+        """
+
+        role_name = role_name.lower().strip()
+        guild_role = discord.utils.get(
+            interaction.guild.roles,
+            name=role_name
+        )
+
+        if guild_role is None:
+            await interaction.response.send_message(
+                USER_INTERACTION_ANSWERS[
+                    'role_not_found'
+                ].format(role_name=role_name.capitalize()),
+                ephemeral=True
+            )
+            return
+
+        if guild_role not in interaction.user.roles:
+            await interaction.response.send_message(
+                USER_INTERACTION_ANSWERS[
+                    'role_not_assigned'
+                ].format(role_name=role_name.capitalize()),
+                ephemeral=True
+            )
+            return
+
+        if not re.match(
+            r'^#(?:[0-9a-fA-F]{3}){1,2}$',
+            color
+        ):
+            await interaction.response.send_message(
+                USER_INTERACTION_ANSWERS[
+                    'invalid_hex_code'
+                ],
+                ephemeral=True
+            )
+            return
+
+        try:
+            hex_color = int(color.lstrip('#'), 16)
+            await guild_role.edit(
+                color=discord.Color(hex_color)
+            )
+            await interaction.response.send_message(
+                USER_INTERACTION_ANSWERS[
+                    'color_changed'
+                ].format(
+                    role_name=role_name.capitalize(),
+                    color=color.upper()
+                ),
+                ephemeral=True
+            )
+        except discord.Forbidden:
+            await interaction.response.send_message(
+                USER_INTERACTION_ANSWERS[
+                    'permission_error'
+                ],
+                ephemeral=True
+            )
+        except Exception as error:
+            logging.exception(error)
+            await interaction.response.send_message(
+                USER_INTERACTION_ANSWERS[
+                    'unexpected_error'
+                ],
+                ephemeral=True
+            )
+
+    @change_role_color.error
+    async def change_role_color_error(
+        self,
+        interaction: Interaction,
+        error
+    ) -> None:
+        await error_handler(interaction, error)
+
+    @app_commands.command(
+        name='change_role_name',
+        description='Изменить название '
+        'своей роли'
+    )
+    @app_commands.describe(
+        old_role_name='Подтверди изменение, '
+        'написав сюда название своей роли'
+    )
+    @app_commands.describe(
+        new_role_name='Напиши сюда новое название '
+        'своей роли'
+    )
+    @user_interaction_check()
+    async def change_role_name(
+        self,
+        interaction: Interaction,
+        old_role_name: str,
+        new_role_name: str
+    ) -> None:
+        """
+        Command to change the name of a user's role.
+
+        Args:
+            interaction (Interaction): The interaction event triggered.
+            old_role_name (str): The current name of the role.
+            new_role_name (str): The new name for the role.
+
+        Returns:
+            None
+        """
+
+        old_role_name = old_role_name.lower().strip()
+        new_role_name = new_role_name.lower().strip()
+        guild_role = discord.utils.get(
+            interaction.guild.roles,
+            name=old_role_name
+        )
+
+        if guild_role is None:
+            await interaction.response.send_message(
+                USER_INTERACTION_ANSWERS[
+                    'role_not_found'
+                ].format(role_name=old_role_name.capitalize()),
+                ephemeral=True
+            )
+            return
+
+        if guild_role not in interaction.user.roles:
+            await interaction.response.send_message(
+                USER_INTERACTION_ANSWERS[
+                    'role_not_assigned'
+                ].format(role_name=old_role_name.capitalize()),
+                ephemeral=True
+            )
+            return
+
+        if old_role_name == new_role_name:
+            await interaction.response.send_message(
+                USER_INTERACTION_ANSWERS[
+                    'same_role_name'
+                ].format(role_name=old_role_name.capitalize()),
+                ephemeral=True
+            )
+            return
+
+        try:
+            await guild_role.edit(name=new_role_name)
+            await interaction.response.send_message(
+                USER_INTERACTION_ANSWERS[
+                    'name_changed'
+                ].format(
+                    old_role_name=old_role_name.capitalize(),
+                    new_role_name=new_role_name.capitalize()
+                ),
+                ephemeral=True
+            )
+        except discord.Forbidden:
+            await interaction.response.send_message(
+                USER_INTERACTION_ANSWERS[
+                    'permission_error'
+                ],
+                ephemeral=True
+            )
+        except Exception as error:
+            logging.exception(error)
+            await interaction.response.send_message(
+                USER_INTERACTION_ANSWERS[
+                    'unexpected_error'
+                ],
+                ephemeral=True
+            )
+
+    @change_role_name.error
+    async def change_role_name_error(
         self,
         interaction: Interaction,
         error
