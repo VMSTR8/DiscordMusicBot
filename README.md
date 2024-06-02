@@ -88,7 +88,7 @@ lavalink:
   pluginsPath: ./plugins
 
 ```
-Начиная с 3.0 версии wavelink использует другой метод поиска музыки на youtube. Для этого скачиаается плагин (автоматически, в Dockerfile уже все прописано) и настраивается в `application.yml`. Настройки указаны выше в примере файла. Репозиторий плагина можете найти [по ссылке](https://github.com/lavalink-devs/youtube-source).
+Начиная с 3.0 версии wavelink использует другой метод поиска музыки на youtube. Для этого скачивается плагин (автоматически, в Dockerfile уже все прописано) и настраивается в `application.yml`. Настройки указаны выше в примере файла. Репозиторий плагина можете найти [по ссылке](https://github.com/lavalink-devs/youtube-source).
 
 Пример `DISCORD_TEXT_CATEGORIES_ID` и `DISCORD_VOICE_CATEGORIES_ID`: `01234567890123456789,9876543210987654321`
 
