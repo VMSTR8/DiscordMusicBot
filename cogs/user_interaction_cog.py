@@ -399,9 +399,9 @@ class UserInteractionCog(commands.Cog):
             interaction: Interaction,
     ) -> None:
         """
-        The function generates a list of the chatbot's "waifus", 
-        consisting of the user who invoked the function 
-        and up to 4 random users who already have roles 
+        The function generates a list of the chatbot's "waifus",
+        consisting of the user who invoked the function
+        and up to 4 random users who already have roles
         assigned on the server.
 
         Args:
