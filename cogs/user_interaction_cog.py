@@ -416,7 +416,7 @@ class UserInteractionCog(commands.Cog):
         all_guild_users = [
             user for user in interaction.guild.members
             if not user.bot
-            and user.roles
+            and any(role != user.guild.default_role for role in user.roles)
             and user.id != invoking_user.id
         ]
 
@@ -437,9 +437,9 @@ class UserInteractionCog(commands.Cog):
             name=f'1. Имя пользователя: {invoking_user.global_name}',
             value=(
                 f'Имя пользователя на сервере: '
-                f'{invoking_user.display_name}\n'
-                f'`❤️ TRUE LOVE ❤️` '
-                f'{interaction.guild.me.display_name} '
+                f'**{invoking_user.display_name}**\n'
+                f'`❤️ TRUE LOVE ❤️` - '
+                f'**{interaction.guild.me.display_name}** '
                 f'неровно дышит к данному пользователю!\n'
                 f'||ЧТО??? И ЗАЧЕМ ПОЛЬЗОВАТЕЛЮ ОБ ЭТОМ ЗНАТЬ?\n'
                 f'*Надулась и покраснела*||'
@@ -458,8 +458,8 @@ class UserInteractionCog(commands.Cog):
                 ),
                 value=(
                     f'Имя пользователя на сервере: '
-                    f'{user.display_name}\n'
-                    f'`{response}`'
+                    f'**{user.display_name}**\n'
+                    f'*{response}*'
                 ),
                 inline=False
             )
