@@ -49,7 +49,10 @@ from settings.settings import (
     GREETINGS_CHANNEL,
 )
 
-from cogs.answers import USER_INTERACTION_ANSWERS
+from cogs.answers import (
+    USER_INTERACTION_ANSWERS,
+    WAIFU_RESPONSE
+)
 
 
 class PaginatorView(discord.ui.View):
@@ -391,6 +394,88 @@ class UserInteractionCog(commands.Cog):
                 if len(role.members) == 0:
                     await role.delete()
 
+    async def show_bots_waifu(
+            self,
+            interaction: Interaction,
+    ) -> None:
+        """
+        The function generates a list of the chatbot's "waifus", 
+        consisting of the user who invoked the function 
+        and up to 4 random users who already have roles 
+        assigned on the server.
+
+        Args:
+            interaction (Interaction): The interaction event triggered.
+
+        Returns:
+            None
+        """
+        invoking_user = interaction.user
+        random_response = random.sample(WAIFU_RESPONSE, 4)
+
+        all_guild_users = [
+            user for user in interaction.guild.members
+            if not user.bot
+            and user.roles
+            and user.id != invoking_user.id
+        ]
+
+        if len(all_guild_users) > 4:
+            selected_guild_users = random.sample(all_guild_users, 4)
+        else:
+            selected_guild_users = all_guild_users
+
+        user_and_response = dict(
+            zip(selected_guild_users, random_response)
+        )
+
+        embed = discord.Embed(
+            title=f'Список вайфу {interaction.guild.me.display_name}',
+            color=0x9966cc
+        )
+        embed.add_field(
+            name=f'1. Имя пользователя: {invoking_user.global_name}',
+            value=(
+                f'Имя пользователя на сервере: '
+                f'{invoking_user.display_name}\n'
+                f'`❤️ TRUE LOVE ❤️` '
+                f'{interaction.guild.me.display_name} '
+                f'неровно дышит к данному пользователю!\n'
+                f'||ЧТО??? И ЗАЧЕМ ПОЛЬЗОВАТЕЛЮ ОБ ЭТОМ ЗНАТЬ?\n'
+                f'*Надулась и покраснела*||'
+            ),
+            inline=False
+        )
+
+        for number, (user, response) in enumerate(
+            user_and_response.items(),
+            start=2
+        ):
+            embed.add_field(
+                name=(
+                    f'{number}. Имя пользователя: '
+                    f'{user.global_name}'
+                ),
+                value=(
+                    f'Имя пользователя на сервере: '
+                    f'{user.display_name}\n'
+                    f'`{response}`'
+                ),
+                inline=False
+            )
+        embed.set_thumbnail(
+            url=invoking_user.display_avatar
+        )
+        embed.set_footer(
+            text='Хватит уже смотреть на мой список!\n'
+            'Лучше посмотри на вайфу других пользователей '
+            'вызовом команды /show_waifus'
+        )
+
+        await interaction.followup.send(
+            embed=embed
+        )
+
     @commands.Cog.listener()
     async def on_member_join(self, member: discord.Member) -> None:
         """
@@ -530,7 +615,7 @@ class UserInteractionCog(commands.Cog):
         'вайфу которого ты хочешь посмотреть'
     )
     @user_interaction_check()
-    async def show_my_waifus(
+    async def show_waifus(
         self,
         interaction: Interaction,
         user: str = None
@@ -569,10 +654,8 @@ class UserInteractionCog(commands.Cog):
 
         if not waifus:
             if user in bot_names:
-                await interaction.followup.send(
-                    USER_INTERACTION_ANSWERS[
-                        'show_bot_waifu'
-                    ]
+                await self.show_bots_waifu(
+                    interaction=interaction
                 )
                 return
             if user:
@@ -621,8 +704,8 @@ class UserInteractionCog(commands.Cog):
             embed=embed
         )
 
-    @show_my_waifus.error
-    async def show_my_waifus_error(
+    @show_waifus.error
+    async def show_waifus_error(
         self,
         interaction: Interaction,
         error
@@ -981,7 +1064,7 @@ class UserInteractionCog(commands.Cog):
                 ephemeral=True
             )
             return
-        
+
         if await self.is_role_exist(
             interaction=interaction,
             role=new_role_name
