@@ -19,11 +19,6 @@ from discord import app_commands, Interaction, ButtonStyle
 from discord.ext import commands
 from discord.errors import Forbidden
 
-from error_handlers.errors import (
-    error_handler,
-    user_interaction_check,
-)
-
 from database.user.db_handler import (
     add_waifu_to_user,
     check_user_waifu_link_exists,
@@ -543,7 +538,7 @@ class UserInteractionCog(commands.Cog):
         shikimori_urls='Ссылки на 5 вайфу с сайта '
         'shikimori.one через запятую'
     )
-    @user_interaction_check()
+    @commands.guild_only()
     async def grant_permission(
             self,
             interaction: Interaction,
@@ -597,14 +592,6 @@ class UserInteractionCog(commands.Cog):
             urls=urls
         )
 
-    @grant_permission.error
-    async def grant_permission_error(
-        self,
-        interaction: Interaction,
-        error
-    ) -> None:
-        await error_handler(interaction, error)
-
     @app_commands.command(
         name='show_waifus',
         description='Посмотреть своих добавленных вайфу '
@@ -614,7 +601,7 @@ class UserInteractionCog(commands.Cog):
         user='Никнейм(регистрозависимый!) или юзернейм пользователя, '
         'вайфу которого ты хочешь посмотреть'
     )
-    @user_interaction_check()
+    @commands.guild_only()
     async def show_waifus(
         self,
         interaction: Interaction,
@@ -704,14 +691,6 @@ class UserInteractionCog(commands.Cog):
             embed=embed
         )
 
-    @show_waifus.error
-    async def show_waifus_error(
-        self,
-        interaction: Interaction,
-        error
-    ) -> None:
-        await error_handler(interaction, error)
-
     @app_commands.command(
         name='true_love',
         description='Добавить лейбл True Love для одной из твоих вайфу'
@@ -719,7 +698,7 @@ class UserInteractionCog(commands.Cog):
     @app_commands.describe(
         waifu_url='Отправь ссылку на ранее добавленную вайфу'
     )
-    @user_interaction_check()
+    @commands.guild_only()
     async def true_love(
         self,
         interaction: Interaction,
@@ -773,20 +752,12 @@ class UserInteractionCog(commands.Cog):
             ephemeral=True
         )
 
-    @true_love.error
-    async def true_love_error(
-        self,
-        interaction: Interaction,
-        error
-    ) -> None:
-        await error_handler(interaction, error)
-
     @app_commands.command(
         name='delete_true_love',
         description='Удалить лейбл True Love, установленный '
         'на одной из твоих вайфу'
     )
-    @user_interaction_check()
+    @commands.guild_only()
     async def delete_true_love(self, interaction: Interaction) -> None:
         """
         Command to remove the True Love label from a waifu.
@@ -813,20 +784,12 @@ class UserInteractionCog(commands.Cog):
             ephemeral=True
         )
 
-    @delete_true_love.error
-    async def delete_true_love_error(
-        self,
-        interaction: Interaction,
-        error
-    ) -> None:
-        await error_handler(interaction, error)
-
     @app_commands.command(
         name='top_waifu',
         description='Показать рейтинг вайфу по '
         'кол-ву добавлений пользователями'
     )
-    @user_interaction_check()
+    @commands.guild_only()
     async def top_waifu(self, interaction: Interaction) -> None:
         """
         Command to display the top waifus
@@ -885,14 +848,6 @@ class UserInteractionCog(commands.Cog):
         await interaction.response.send_message(embed=view.initial, view=view)
         view.message = await interaction.original_response()
 
-    @top_waifu.error
-    async def top_waifu_error(
-        self,
-        interaction: Interaction,
-        error
-    ) -> None:
-        await error_handler(interaction, error)
-
     @app_commands.command(
         name='change_role_color',
         description='Изменить цвет  '
@@ -906,7 +861,7 @@ class UserInteractionCog(commands.Cog):
         color='Напиши сюда HEX код цвета, '
         'например: #9966CC'
     )
-    @user_interaction_check()
+    @commands.guild_only()
     async def change_role_color(
         self,
         interaction: Interaction,
@@ -991,14 +946,6 @@ class UserInteractionCog(commands.Cog):
                 ephemeral=True
             )
 
-    @change_role_color.error
-    async def change_role_color_error(
-        self,
-        interaction: Interaction,
-        error
-    ) -> None:
-        await error_handler(interaction, error)
-
     @app_commands.command(
         name='change_role_name',
         description='Изменить название '
@@ -1012,7 +959,7 @@ class UserInteractionCog(commands.Cog):
         new_role_name='Напиши сюда новое название '
         'своей роли'
     )
-    @user_interaction_check()
+    @commands.guild_only()
     async def change_role_name(
         self,
         interaction: Interaction,
@@ -1103,11 +1050,3 @@ class UserInteractionCog(commands.Cog):
                 ],
                 ephemeral=True
             )
-
-    @change_role_name.error
-    async def change_role_name_error(
-        self,
-        interaction: Interaction,
-        error
-    ) -> None:
-        await error_handler(interaction, error)
