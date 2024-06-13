@@ -16,7 +16,7 @@ from tortoise import run_async, Tortoise
 
 from database.init import init
 
-from cogs.music_cog import MusicCog
+from cogs.player_cog import PlayerCog
 from cogs.user_interaction_cog import UserInteractionCog
 from cogs.admin_cog import AdminCog
 
@@ -77,7 +77,7 @@ class DiscordBot(commands.Bot):
         Raises:
             Exception: If an error occurs during command syncing.
         """
-        await self.add_cog(MusicCog(bot=self))
+        await self.add_cog(PlayerCog(bot=self))
         await self.add_cog(UserInteractionCog(bot=self))
         await self.add_cog(AdminCog(bot=self))
 
