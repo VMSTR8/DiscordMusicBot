@@ -5,13 +5,5 @@ class UserVoiceChannelError(CheckFailure):
     pass
 
 
-class BotVoiceChannelError(CheckFailure):
-    pass
-
-
 class DifferentVoiceChannelsError(CheckFailure):
-    pass
-
-
-class BotCalledFromDirectMessageError(CheckFailure):
     pass
