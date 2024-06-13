@@ -35,7 +35,7 @@ from error_handlers.errors import (
 
 def same_channel_check(func: Callable) -> Callable:
     """
-    Decorator to check if the user 
+    Decorator to check if the user
     is in the same voice channel as the bot.
 
     Args:
@@ -97,8 +97,12 @@ class PlayerControls(discord.ui.View):
         self.volume = player.volume
         self.embed = embed
 
-    @discord.ui.button(emoji='⏪')
-    @same_channel_check
+    @discord.ui.button(
+        emoji=discord.PartialEmoji.from_str(
+            '<:botrewind:1250613904933912687>'),
+        style=discord.ButtonStyle.blurple
+    )
+    @ same_channel_check
     async def rewind(
         self,
         interaction: Interaction,
@@ -116,8 +120,11 @@ class PlayerControls(discord.ui.View):
         await self.player.seek(new_position)
         await interaction.response.edit_message(view=self)
 
-    @discord.ui.button(emoji='⏹')
-    @same_channel_check
+    @ discord.ui.button(
+        emoji=discord.PartialEmoji.from_str('<:botstop:1250613906532204564>'),
+        style=discord.ButtonStyle.blurple
+    )
+    @ same_channel_check
     async def stop(
         self,
         interaction: Interaction,
@@ -132,9 +139,13 @@ class PlayerControls(discord.ui.View):
         """
         self.player.queue.clear()
         await self.player.stop(force=False)
+        await self.player.disconnect()
 
-    @discord.ui.button(emoji='⏸')
-    @same_channel_check
+    @ discord.ui.button(
+        emoji=discord.PartialEmoji.from_str('<:botpause:1250613901842845696>'),
+        style=discord.ButtonStyle.blurple
+    )
+    @ same_channel_check
     async def pause(
         self,
         interaction: Interaction,
@@ -150,13 +161,21 @@ class PlayerControls(discord.ui.View):
         await self.player.pause(not self.player.paused)
 
         if self.player.paused:
-            button.emoji = '▶️'
+            button.emoji = discord.PartialEmoji.from_str(
+                '<:botplay:1250613903470100490>')
+            button.style = discord.ButtonStyle.success
         else:
-            button.emoji = '⏸'
+            button.emoji = discord.PartialEmoji.from_str(
+                '<:botpause:1250613901842845696>')
+            button.style = discord.ButtonStyle.blurple
         await interaction.response.edit_message(view=self)
 
-    @discord.ui.button(emoji='⏩')
-    @same_channel_check
+    @ discord.ui.button(
+        emoji=discord.PartialEmoji.from_str(
+            '<:botfastforward:1250613898374152252>'),
+        style=discord.ButtonStyle.blurple
+    )
+    @ same_channel_check
     async def fast_forward(
         self,
         interaction: Interaction,
@@ -185,10 +204,13 @@ class PlayerControls(discord.ui.View):
         except NotFound:
             await interaction.response.edit_message(view=self)
         except InteractionResponded:
-            pass
+            await self.player.disconnect()
 
-    @discord.ui.button(emoji='⏭', custom_id='player:skip')
-    @same_channel_check
+    @ discord.ui.button(
+        emoji=discord.PartialEmoji.from_str('<:botskip:1250613899733110960>'),
+        style=discord.ButtonStyle.blurple
+    )
+    @ same_channel_check
     async def skip(
         self,
         interaction: Interaction,
@@ -203,66 +225,10 @@ class PlayerControls(discord.ui.View):
         """
         if self.player.queue:
             await self.player.skip()
+            await interaction.response.edit_message(view=self)
         else:
             await self.player.stop()
-
-    @discord.ui.button(emoji='🔈', custom_id='player:volume_down')
-    @same_channel_check
-    async def volume_down(
-        self,
-        interaction: Interaction,
-        button: discord.ui.Button,
-    ) -> None:
-        """
-        Handle the volume down button interaction.
-
-        Args:
-            interaction (Interaction): The interaction context.
-            button (discord.ui.Button): The button that was pressed.
-        """
-        if self.volume == 0:
-            await interaction.response.edit_message(view=self)
-        else:
-            self.volume -= 10
-            await self.player.set_volume(self.volume)
-            self.embed.set_field_at(
-                2, name='Громкость',
-                value=f'`{self.volume}%`',
-                inline=True
-            )
-            await interaction.response.edit_message(
-                view=self,
-                embed=self.embed
-            )
-
-    @discord.ui.button(emoji='🔊')
-    @same_channel_check
-    async def volume_up(
-        self,
-        interaction: Interaction,
-        button: discord.ui.Button,
-    ) -> None:
-        """
-        Handle the volume up button interaction.
-
-        Args:
-            interaction (Interaction): The interaction context.
-            button (discord.ui.Button): The button that was pressed.
-        """
-        if self.volume == 100:
-            await interaction.response.edit_message(view=self)
-        else:
-            self.volume += 10
-            await self.player.set_volume(self.volume)
-            self.embed.set_field_at(
-                2, name='Громкость',
-                value=f'`{self.volume}%`',
-                inline=True
-            )
-            await interaction.response.edit_message(
-                view=self,
-                embed=self.embed
-            )
+            await self.player.disconnect()
 
 
 class PlayerCog(commands.Cog):
@@ -283,8 +249,9 @@ class PlayerCog(commands.Cog):
         self.message = None
         self.embed = None
         self.track_volume = 100
+        self.view = PlayerControls
 
-    @commands.Cog.listener()
+    @ commands.Cog.listener()
     async def on_voice_state_update(self, member, before, after):
         if member == self.bot.user and before.channel and not after.channel:
             if self.message:
@@ -294,7 +261,7 @@ class PlayerCog(commands.Cog):
                     pass
                 self.message = self.channel = self.embed = None
 
-    @commands.Cog.listener()
+    @ commands.Cog.listener()
     async def on_wavelink_node_ready(self, node: wavelink.Node) -> None:
         """
         Event listener for when a wavelink node becomes ready.
@@ -304,7 +271,7 @@ class PlayerCog(commands.Cog):
         """
         logging.info(f'Node {node.node.uri} ready.')
 
-    @commands.Cog.listener()
+    @ commands.Cog.listener()
     async def on_wavelink_track_start(
         self,
         payload: wavelink.TrackStartEventPayload
@@ -316,7 +283,6 @@ class PlayerCog(commands.Cog):
             payload (wavelink.TrackStartEventPayload): The track event payload.
         """
         player: wavelink.Player | None = payload.player
-
         if not player:
             return
 
@@ -333,6 +299,7 @@ class PlayerCog(commands.Cog):
                 [f'{iteration + 1}. {track.author} - {track.title}\n'
                     for iteration, track in enumerate(player.queue[:5])]
             )
+        author = track.author if track.artist else track.author
 
         embed = discord.Embed(
             title='Сейчас играет',
@@ -344,69 +311,47 @@ class PlayerCog(commands.Cog):
             embed.set_thumbnail(url=track.artwork)
 
         embed.add_field(
+            name='Исполнитель',
+            value=f'`{author}`',
+            inline=True
+        )
+        embed.add_field(
             name='Продолжительность',
             value=f'`{track_duration}`',
             inline=True
         )
-
         embed.add_field(
-            name='Очередь',
+            name='В очереди',
             value=f'`{len(player.queue)}`',
             inline=True
         )
-
-        embed.add_field(
-            name='Громкость',
-            value=f'`{player.volume}%`',
-            inline=True
-        )
-
         embed.add_field(
             name='Очередь [первые 5 позиций]',
             value=f'{queue}',
             inline=False
         )
-
+        embed.set_footer(
+            text=(
+                'Если очередь воспроизведения пустая,\n'
+                'то через 1 минуту я сама покину голосовой канал!'
+                )
+        )
         self.embed = embed
 
-        view = PlayerControls(player=player, embed=embed)
+        view = self.view(player=player, embed=embed)
+
         if not self.message:
             self.message = await self.channel.send(embed=embed, view=view)
         else:
-            await self.message.delete()
-            self.message = await self.channel.send(embed=embed, view=view)
+            await asyncio.sleep(0.2)
+            await self.message.edit(embed=embed)
 
     @commands.Cog.listener()
-    async def on_wavelink_track_end(
+    async def on_wavelink_inactive_player(
         self,
-        payload: wavelink.TrackStartEventPayload
+        player: wavelink.Player
     ) -> None:
-        """
-        Event listener for when a wavelink track ends.
-
-        Args:
-            payload (wavelink.TrackStartEventPayload): The track event payload.
-        """
-        player: wavelink.Player | None = payload.player
-
-        if not player:
-            return
-
-        self.track_volume = player.volume
-
-        if player.queue:
-            pass
-        else:
-            embed = discord.Embed(
-                title='Воспроизведение завершено, плеер отключен',
-                description='Чтобы включить музыку '
-                'вызови команду /play',
-                color=0x9966cc
-            )
-            await self.message.delete()
-            await self.channel.send(view=None, embed=embed)
-            self.channel = self.message = self.embed = None
-            await player.disconnect()
+        await player.disconnect()
 
     @app_commands.command(
         name='play',
@@ -461,11 +406,13 @@ class PlayerCog(commands.Cog):
         )
 
         player.autoplay = wavelink.AutoPlayMode.partial
+        player.inactive_timeout = 60
+
         track: wavelink.Playable = tracks[0]
 
         await player.queue.put_wait(track)
 
-        view = PlayerControls(player=player, embed=self.embed)
+        view = self.view(player=player, embed=self.embed)
 
         if not player.playing:
             await player.play(player.queue.get(), volume=self.track_volume)
@@ -480,8 +427,8 @@ class PlayerCog(commands.Cog):
                  for iteration, track in enumerate(player.queue[:5])]
             )
             self.embed.set_field_at(
-                1,
-                name='Очередь',
+                2,
+                name='В очереди',
                 value=f'`{len(player.queue)}`',
                 inline=True
             )
