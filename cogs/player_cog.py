@@ -102,7 +102,7 @@ class PlayerControls(discord.ui.View):
             '<:botrewind:1250613904933912687>'),
         style=discord.ButtonStyle.blurple
     )
-    @ same_channel_check
+    @same_channel_check
     async def rewind(
         self,
         interaction: Interaction,
@@ -120,11 +120,11 @@ class PlayerControls(discord.ui.View):
         await self.player.seek(new_position)
         await interaction.response.edit_message(view=self)
 
-    @ discord.ui.button(
+    @discord.ui.button(
         emoji=discord.PartialEmoji.from_str('<:botstop:1250613906532204564>'),
         style=discord.ButtonStyle.blurple
     )
-    @ same_channel_check
+    @same_channel_check
     async def stop(
         self,
         interaction: Interaction,
@@ -141,11 +141,11 @@ class PlayerControls(discord.ui.View):
         await self.player.stop(force=False)
         await self.player.disconnect()
 
-    @ discord.ui.button(
+    @discord.ui.button(
         emoji=discord.PartialEmoji.from_str('<:botpause:1250613901842845696>'),
         style=discord.ButtonStyle.blurple
     )
-    @ same_channel_check
+    @same_channel_check
     async def pause(
         self,
         interaction: Interaction,
@@ -170,12 +170,12 @@ class PlayerControls(discord.ui.View):
             button.style = discord.ButtonStyle.blurple
         await interaction.response.edit_message(view=self)
 
-    @ discord.ui.button(
+    @discord.ui.button(
         emoji=discord.PartialEmoji.from_str(
             '<:botfastforward:1250613898374152252>'),
         style=discord.ButtonStyle.blurple
     )
-    @ same_channel_check
+    @same_channel_check
     async def fast_forward(
         self,
         interaction: Interaction,
@@ -206,11 +206,11 @@ class PlayerControls(discord.ui.View):
         except InteractionResponded:
             await self.player.disconnect()
 
-    @ discord.ui.button(
+    @discord.ui.button(
         emoji=discord.PartialEmoji.from_str('<:botskip:1250613899733110960>'),
         style=discord.ButtonStyle.blurple
     )
-    @ same_channel_check
+    @same_channel_check
     async def skip(
         self,
         interaction: Interaction,
@@ -251,7 +251,7 @@ class PlayerCog(commands.Cog):
         self.track_volume = 100
         self.view = PlayerControls
 
-    @ commands.Cog.listener()
+    @commands.Cog.listener()
     async def on_voice_state_update(self, member, before, after):
         if member == self.bot.user and before.channel and not after.channel:
             if self.message:
@@ -261,7 +261,7 @@ class PlayerCog(commands.Cog):
                     pass
                 self.message = self.channel = self.embed = None
 
-    @ commands.Cog.listener()
+    @commands.Cog.listener()
     async def on_wavelink_node_ready(self, node: wavelink.Node) -> None:
         """
         Event listener for when a wavelink node becomes ready.
@@ -271,7 +271,7 @@ class PlayerCog(commands.Cog):
         """
         logging.info(f'Node {node.node.uri} ready.')
 
-    @ commands.Cog.listener()
+    @commands.Cog.listener()
     async def on_wavelink_track_start(
         self,
         payload: wavelink.TrackStartEventPayload
@@ -334,7 +334,7 @@ class PlayerCog(commands.Cog):
             text=(
                 'Если очередь воспроизведения пустая,\n'
                 'то через 1 минуту я сама покину голосовой канал!'
-                )
+            )
         )
         self.embed = embed
 
