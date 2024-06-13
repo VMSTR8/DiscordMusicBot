@@ -31,6 +31,7 @@ class AdminCog(commands.Cog):
         message_id='[Опционально] Вставь сюда ID сообщения, '
         'которое бот должен переслать'
     )
+    @commands.guild_only()
     @app_commands.checks.has_permissions(administrator=True)
     async def send_message(
         self,
@@ -130,6 +131,7 @@ class AdminCog(commands.Cog):
         message_id='[Опционально] Вставь сюда ID сообщения, '
         'из которого бот скопирует текст'
     )
+    @commands.guild_only()
     @app_commands.checks.has_permissions(administrator=True)
     async def edit_bot_message(
         self,
