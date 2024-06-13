@@ -7,13 +7,13 @@ from typing import (
     Any,
     Callable,
     Optional,
-    Union,
-    List
 )
 
 from datetime import timedelta
 
 from functools import wraps
+
+import random
 
 import discord
 from discord import app_commands, Interaction
@@ -31,6 +31,8 @@ from error_handlers.errors import (
     play_check,
     error_handler,
 )
+
+from cogs.answers import PLAYER_BUTTONS_ERROR
 
 
 def same_channel_check(func: Callable) -> Callable:
@@ -66,7 +68,13 @@ def same_channel_check(func: Callable) -> Callable:
         else:
             await interaction.response.edit_message(view=self)
             try:
-                await interaction.user.send('Вы должны находиться в одном голосовом канале с ботом, чтобы использовать эти кнопки.')
+                await interaction.user.send(
+                    random.choice(PLAYER_BUTTONS_ERROR),
+                    file=discord.File(
+                        'bot_images/player/buttons_error/angry.jpg'
+                    ),
+                    delete_after=60.0
+                )
             except Forbidden:
                 pass
             return
@@ -93,9 +101,10 @@ class PlayerControls(discord.ui.View):
             embed (discord.Embed): The embed associated with the controls.
         """
         super().__init__(timeout=None)
-        self.player = player
-        self.volume = player.volume
-        self.embed = embed
+        self.player: wavelink.Player = player
+        self.embed: discord.Embed = embed
+
+        self.lock: asyncio.Lock = asyncio.Lock()
 
     @discord.ui.button(
         emoji=discord.PartialEmoji.from_str(
@@ -115,10 +124,11 @@ class PlayerControls(discord.ui.View):
             interaction (Interaction): The interaction context.
             button (discord.ui.Button): The button that was pressed.
         """
-        current_position = self.player.position
-        new_position = max(0, current_position - 10000)
-        await self.player.seek(new_position)
-        await interaction.response.edit_message(view=self)
+        async with self.lock:
+            current_position = self.player.position
+            new_position = max(0, current_position - 10000)
+            await self.player.seek(new_position)
+            await interaction.response.edit_message(view=self)
 
     @discord.ui.button(
         emoji=discord.PartialEmoji.from_str('<:botstop:1250613906532204564>'),
@@ -137,9 +147,10 @@ class PlayerControls(discord.ui.View):
             interaction (Interaction): The interaction context.
             button (discord.ui.Button): The button that was pressed.
         """
-        self.player.queue.clear()
-        await self.player.stop(force=False)
-        await self.player.disconnect()
+        async with self.lock:
+            self.player.queue.clear()
+            await self.player.stop(force=False)
+            await self.player.disconnect()
 
     @discord.ui.button(
         emoji=discord.PartialEmoji.from_str('<:botpause:1250613901842845696>'),
@@ -158,17 +169,18 @@ class PlayerControls(discord.ui.View):
             interaction (Interaction): The interaction context.
             button (discord.ui.Button): The button that was pressed.
         """
-        await self.player.pause(not self.player.paused)
+        async with self.lock:
+            await self.player.pause(not self.player.paused)
 
-        if self.player.paused:
-            button.emoji = discord.PartialEmoji.from_str(
-                '<:botplay:1250613903470100490>')
-            button.style = discord.ButtonStyle.success
-        else:
-            button.emoji = discord.PartialEmoji.from_str(
-                '<:botpause:1250613901842845696>')
-            button.style = discord.ButtonStyle.blurple
-        await interaction.response.edit_message(view=self)
+            if self.player.paused:
+                button.emoji = discord.PartialEmoji.from_str(
+                    '<:botplay:1250613903470100490>')
+                button.style = discord.ButtonStyle.success
+            else:
+                button.emoji = discord.PartialEmoji.from_str(
+                    '<:botpause:1250613901842845696>')
+                button.style = discord.ButtonStyle.blurple
+            await interaction.response.edit_message(view=self)
 
     @discord.ui.button(
         emoji=discord.PartialEmoji.from_str(
@@ -188,23 +200,24 @@ class PlayerControls(discord.ui.View):
             interaction (Interaction): The interaction context.
             button (discord.ui.Button): The button that was pressed.
         """
-        current_position = self.player.position
-        new_position = current_position + 10000
-        try:
-            if new_position >= self.player.current.length:
-                if self.player.queue:
-                    await self.player.skip()
-            else:
-                await self.player.seek(new_position)
-        except AttributeError:
-            await interaction.response.edit_message(view=None)
+        async with self.lock:
+            current_position = self.player.position
+            new_position = current_position + 10000
+            try:
+                if new_position >= self.player.current.length:
+                    if self.player.queue:
+                        await self.player.skip()
+                else:
+                    await self.player.seek(new_position)
+            except AttributeError:
+                await interaction.response.edit_message(view=None)
 
-        try:
-            await interaction.response.edit_message(view=self)
-        except NotFound:
-            await interaction.response.edit_message(view=self)
-        except InteractionResponded:
-            await self.player.disconnect()
+            try:
+                await interaction.response.edit_message(view=self)
+            except NotFound:
+                await interaction.response.edit_message(view=self)
+            except InteractionResponded:
+                await self.player.disconnect()
 
     @discord.ui.button(
         emoji=discord.PartialEmoji.from_str('<:botskip:1250613899733110960>'),
@@ -223,12 +236,13 @@ class PlayerControls(discord.ui.View):
             interaction (Interaction): The interaction context.
             button (discord.ui.Button): The button that was pressed.
         """
-        if self.player.queue:
-            await self.player.skip()
-            await interaction.response.edit_message(view=self)
-        else:
-            await self.player.stop()
-            await self.player.disconnect()
+        async with self.lock:
+            if self.player.queue:
+                await self.player.skip()
+                await interaction.response.edit_message(view=self)
+            else:
+                await self.player.stop()
+                await self.player.disconnect()
 
 
 class PlayerCog(commands.Cog):
@@ -245,14 +259,27 @@ class PlayerCog(commands.Cog):
         """
         self.bot = bot
 
-        self.channel = None
-        self.message = None
-        self.embed = None
-        self.track_volume = 100
-        self.view = PlayerControls
+        self.channel: Optional[discord.TextChannel] = None
+        self.message: Optional[discord.Message] = None
+        self.embed: Optional[discord.Embed] = None
+        self.track_volume: int = 100
+        self.view: type[PlayerControls] = PlayerControls
 
     @commands.Cog.listener()
-    async def on_voice_state_update(self, member, before, after):
+    async def on_voice_state_update(
+        self,
+        member: discord.Member,
+        before: discord.VoiceState,
+        after: discord.VoiceState
+    ) -> None:
+        """
+        Event listener for when a voice state updates.
+
+        Args:
+            member (discord.Member): The member whose voice state updated.
+            before (discord.VoiceState): The state before the update.
+            after (discord.VoiceState): The state after the update.
+        """
         if member == self.bot.user and before.channel and not after.channel:
             if self.message:
                 try:
@@ -301,6 +328,10 @@ class PlayerCog(commands.Cog):
             )
         author = track.author if track.artist else track.author
 
+        footer_icon = discord.File(
+            'bot_images/player/headphones.png',
+            filename='headphones.png'
+        )
         embed = discord.Embed(
             title='Сейчас играет',
             description=description,
@@ -334,14 +365,19 @@ class PlayerCog(commands.Cog):
             text=(
                 'Если очередь воспроизведения пустая,\n'
                 'то через 1 минуту я сама покину голосовой канал!'
-            )
+            ),
+            icon_url='attachment://headphones.png'
         )
         self.embed = embed
 
         view = self.view(player=player, embed=embed)
 
         if not self.message:
-            self.message = await self.channel.send(embed=embed, view=view)
+            self.message = await self.channel.send(
+                embed=embed,
+                view=view,
+                file=footer_icon
+            )
         else:
             await asyncio.sleep(0.2)
             await self.message.edit(embed=embed)
@@ -351,6 +387,12 @@ class PlayerCog(commands.Cog):
         self,
         player: wavelink.Player
     ) -> None:
+        """
+        Event listener for when a wavelink player becomes inactive.
+
+        Args:
+            player (wavelink.Player): The inactive player.
+        """
         await player.disconnect()
 
     @app_commands.command(
@@ -360,6 +402,7 @@ class PlayerCog(commands.Cog):
     @app_commands.describe(
         song='Напиши название песни или отправь ссылку на песню!'
     )
+    @commands.guild_only()
     @play_check()
     async def play(
         self,
