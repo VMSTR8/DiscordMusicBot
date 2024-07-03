@@ -1,6 +1,11 @@
 import os
 
+import re
+
 import asyncio
+
+# from g4f.client import Client
+import requests
 
 import logging
 
@@ -26,6 +31,7 @@ from settings.settings import (
     WAVELINK_PASSWORD,
     MESSAGE_NOT_ALLOWED_TEXT_CHANNELS_ID,
 )
+text = None
 
 
 class DiscordBot(commands.Bot):
@@ -112,6 +118,43 @@ class DiscordBot(commands.Bot):
         Deletes the message if it's from a restricted
         channel and not sent by a bot.
         """
+        if self.user in message.mentions:
+            try:
+                answer = None
+                url = 'http://localhost:1337/v1/chat/completions'
+                body = {
+                    'provider': 'Blackbox',
+                    'model': 'gpt-4o',
+                    'messages': [
+                        {'role': 'user', 'content': f'Отвечай как девушка-цундере. Максимально используй анимешные клише. Отвечай всегда на русском языке.\n\n{message.content}'}
+                    ],
+                }
+                json_response = requests.post(
+                    url, json=body).json().get('choices', [])
+                for choice in json_response:
+                    answer = choice.get('message', {}).get('content', '')
+                pattern = r'^\$@\$(.*?)\$@\$'
+                answer = re.sub(
+                    pattern, '', answer
+                )
+
+                answer = f'{message.author.mention}\n{answer}'
+            except Exception as e:
+                logging.error(e)
+                answer = 'Что-то пошло не так'
+
+            # text = message.content
+            # result = subprocess.run(
+            #     ['python', 'test.py'],
+            #     capture_output=True,
+            #     text=True,
+            #     check=True
+            # ).stdout
+
+            # result = test(message=message.content)
+            await message.channel.send(answer)
+            return
+
         if message.channel.id in [
             int(channel_id)
             for channel_id in MESSAGE_NOT_ALLOWED_TEXT_CHANNELS_ID.split(',')
