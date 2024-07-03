@@ -171,6 +171,183 @@ class PaginatorView(discord.ui.View):
         return self._initial
 
 
+class ServerUsers(discord.ui.UserSelect):
+    """
+    A custom user selection menu for selecting users from the server.
+
+    Methods:
+        show_bots_waifu(interaction: Interaction):
+        Generates a list of the chatbot's "waifus".
+        callback(interaction: Interaction): Handles the interaction
+        when a user is selected.
+    """
+
+    def __init__(self):
+        """
+        Initialize the ServerUsers user selection menu.
+        """
+
+        super().__init__(
+            placeholder='Выбери пользователя...',
+            min_values=1,
+            max_values=1
+        )
+
+    async def show_bots_waifu(
+            self,
+            interaction: Interaction,
+    ) -> None:
+        """
+        The function generates a list of the chatbot's "waifus",
+        consisting of the user who invoked the function
+        and up to 4 random users who already have roles
+        assigned on the server.
+
+        Args:
+            interaction (Interaction): The interaction event triggered.
+
+        Returns:
+            None
+        """
+        invoking_user = interaction.user
+        random_response = random.sample(WAIFU_RESPONSE, 4)
+
+        all_guild_users = [
+            user for user in interaction.guild.members
+            if not user.bot
+            and any(role != user.guild.default_role for role in user.roles)
+            and user.id != invoking_user.id
+        ]
+
+        if len(all_guild_users) > 4:
+            selected_guild_users = random.sample(all_guild_users, 4)
+        else:
+            selected_guild_users = all_guild_users
+
+        user_and_response = dict(
+            zip(selected_guild_users, random_response)
+        )
+
+        embed = discord.Embed(
+            title=f'Список вайфу {interaction.guild.me.display_name}',
+            color=0x9966cc
+        )
+        embed.add_field(
+            name=f'1. Имя пользователя: {invoking_user.global_name}',
+            value=(
+                f'Имя пользователя на сервере: '
+                f'**{invoking_user.display_name}**\n'
+                f'`❤️ TRUE LOVE ❤️` - '
+                f'**{interaction.guild.me.display_name}** '
+                f'неровно дышит к данному пользователю!\n'
+                f'||ЧТО??? И ЗАЧЕМ ПОЛЬЗОВАТЕЛЮ ОБ ЭТОМ ЗНАТЬ?\n'
+                f'*Надулась и покраснела*||'
+            ),
+            inline=False
+        )
+
+        for number, (user, response) in enumerate(
+            user_and_response.items(),
+            start=2
+        ):
+            embed.add_field(
+                name=(
+                    f'{number}. Имя пользователя: '
+                    f'{user.global_name}'
+                ),
+                value=(
+                    f'Имя пользователя на сервере: '
+                    f'**{user.display_name}**\n'
+                    f'*{response}*'
+                ),
+                inline=False
+            )
+        embed.set_thumbnail(
+            url=invoking_user.display_avatar
+        )
+        embed.set_footer(
+            text='Хватит уже смотреть на мой список!\n'
+            'Лучше посмотри на вайфу других пользователей '
+            'вызовом команды /show_waifus'
+        )
+
+        await interaction.response.send_message(
+            embed=embed,
+        )
+
+    async def callback(
+            self,
+            interaction: Interaction
+    ) -> None:
+        """
+        Handle the interaction when a user is selected from the menu.
+
+        Args:
+            interaction (Interaction): The interaction event triggered.
+
+        Returns:
+            None
+        """
+        selected_user = self.values[0]
+
+        waifus = await get_user_waifus(discord_id=selected_user.id)
+
+        if not waifus:
+            if (selected_user.bot
+                    and selected_user.id == interaction.message.author.id):
+                await self.show_bots_waifu(
+                    interaction=interaction
+                )
+                return
+            if selected_user.bot:
+                await interaction.response.send_message(
+                    USER_INTERACTION_ANSWERS[
+                        'show_another_bot_err'
+                    ],
+                )
+                return
+            await interaction.response.send_message(
+                USER_INTERACTION_ANSWERS[
+                    'show_other_waifu_err'
+                ].format(username=selected_user.global_name),
+            )
+            return
+
+        embed = discord.Embed(
+            title=f'Список вайфу {selected_user.display_name}', color=0x9966cc)
+
+        for number, waifu_link in enumerate(waifus, start=1):
+            waifu = waifu_link.waifu
+            field_value = (
+                f'Ссылка: https://shikimori.one{waifu.url}\n'
+                f'Еще известна, как: {waifu.alt_name}\n'
+                f'Имя на японском: {waifu.japanese_name}\n'
+                f'Shikimori ID: {waifu.shikimori_id}'
+            )
+
+            if waifu_link.true_love:
+                field_value = (
+                    f'`❤️ TRUE LOVE ❤️` '
+                    f'Выбрана самой любимой вайфу у '
+                    f'{selected_user.global_name}\n{field_value}'
+                )
+
+            embed.add_field(
+                name=f'{number}. Имя: **{waifu.waifu_name_rus}**',
+                value=field_value,
+                inline=False
+            )
+
+        embed.set_footer(
+            text='Ты можешь добавить лейбл True Love '
+            'вызовом команды /true_love'
+        )
+
+        await interaction.response.send_message(
+            embed=embed,
+        )
+
+
 class UserInteractionCog(commands.Cog):
     """
     A cog for user interaction commands.
@@ -389,88 +566,6 @@ class UserInteractionCog(commands.Cog):
                 if len(role.members) == 0:
                     await role.delete()
 
-    async def show_bots_waifu(
-            self,
-            interaction: Interaction,
-    ) -> None:
-        """
-        The function generates a list of the chatbot's "waifus",
-        consisting of the user who invoked the function
-        and up to 4 random users who already have roles
-        assigned on the server.
-
-        Args:
-            interaction (Interaction): The interaction event triggered.
-
-        Returns:
-            None
-        """
-        invoking_user = interaction.user
-        random_response = random.sample(WAIFU_RESPONSE, 4)
-
-        all_guild_users = [
-            user for user in interaction.guild.members
-            if not user.bot
-            and any(role != user.guild.default_role for role in user.roles)
-            and user.id != invoking_user.id
-        ]
-
-        if len(all_guild_users) > 4:
-            selected_guild_users = random.sample(all_guild_users, 4)
-        else:
-            selected_guild_users = all_guild_users
-
-        user_and_response = dict(
-            zip(selected_guild_users, random_response)
-        )
-
-        embed = discord.Embed(
-            title=f'Список вайфу {interaction.guild.me.display_name}',
-            color=0x9966cc
-        )
-        embed.add_field(
-            name=f'1. Имя пользователя: {invoking_user.global_name}',
-            value=(
-                f'Имя пользователя на сервере: '
-                f'**{invoking_user.display_name}**\n'
-                f'`❤️ TRUE LOVE ❤️` - '
-                f'**{interaction.guild.me.display_name}** '
-                f'неровно дышит к данному пользователю!\n'
-                f'||ЧТО??? И ЗАЧЕМ ПОЛЬЗОВАТЕЛЮ ОБ ЭТОМ ЗНАТЬ?\n'
-                f'*Надулась и покраснела*||'
-            ),
-            inline=False
-        )
-
-        for number, (user, response) in enumerate(
-            user_and_response.items(),
-            start=2
-        ):
-            embed.add_field(
-                name=(
-                    f'{number}. Имя пользователя: '
-                    f'{user.global_name}'
-                ),
-                value=(
-                    f'Имя пользователя на сервере: '
-                    f'**{user.display_name}**\n'
-                    f'*{response}*'
-                ),
-                inline=False
-            )
-        embed.set_thumbnail(
-            url=invoking_user.display_avatar
-        )
-        embed.set_footer(
-            text='Хватит уже смотреть на мой список!\n'
-            'Лучше посмотри на вайфу других пользователей '
-            'вызовом команды /show_waifus'
-        )
-
-        await interaction.followup.send(
-            embed=embed
-        )
-
     @commands.Cog.listener()
     async def on_member_join(self, member: discord.Member) -> None:
         """
@@ -594,101 +689,35 @@ class UserInteractionCog(commands.Cog):
 
     @app_commands.command(
         name='show_waifus',
-        description='Посмотреть своих добавленных вайфу '
-        'или вайфу другого пользователя'
-    )
-    @app_commands.describe(
-        user='Никнейм(регистрозависимый!) или юзернейм пользователя, '
-        'вайфу которого ты хочешь посмотреть'
+        description='Посмотреть список добавленных вайфу '
+        'пользователя'
     )
     @commands.guild_only()
     async def show_waifus(
         self,
         interaction: Interaction,
-        user: str = None
     ) -> None:
         """
-        Command to display the list of waifus added
-        by the user or another user.
+        This method creates a selection menu for users
+        to choose a server member and view their list of waifus.
+        The selection menu is added to a view
+        and sent as a response to the interaction.
 
         Args:
             interaction (Interaction): The interaction event triggered.
-            user (str, optional): Username of the user whose
-            waifus are to be displayed.
 
         Returns:
             None
         """
-        await interaction.response.defer()
+        select = ServerUsers()
+        view = discord.ui.View()
 
-        bot_names = [
-            interaction.guild.me.display_name,
-            interaction.guild.me.name
-        ]
+        view.add_item(select)
 
-        if user:
-            discord_id = interaction.guild.get_member_named(user)
-        else:
-            discord_id = interaction.user
-
-        try:
-            waifus = await get_user_waifus(discord_id=discord_id.id)
-        except AttributeError:
-            await interaction.followup.send(
-                USER_INTERACTION_ANSWERS['user_not_found']
-            )
-            return
-
-        if not waifus:
-            if user in bot_names:
-                await self.show_bots_waifu(
-                    interaction=interaction
-                )
-                return
-            if user:
-                await interaction.followup.send(
-                    USER_INTERACTION_ANSWERS[
-                        'show_other_waifu_err'
-                    ].format(username=user)
-                )
-                return
-            await interaction.followup.send(
-                USER_INTERACTION_ANSWERS['show_my_waifu_err']
-            )
-            return
-
-        embed = discord.Embed(
-            title=f'Список вайфу {discord_id.global_name}', color=0x9966cc)
-
-        for number, waifu_link in enumerate(waifus, start=1):
-            waifu = waifu_link.waifu
-            field_value = (
-                f'Ссылка: https://shikimori.one{waifu.url}\n'
-                f'Еще известна, как: {waifu.alt_name}\n'
-                f'Имя на японском: {waifu.japanese_name}\n'
-                f'Shikimori ID: {waifu.shikimori_id}'
-            )
-
-            if waifu_link.true_love:
-                field_value = (
-                    f'`❤️ TRUE LOVE ❤️` '
-                    f'Выбрана самой любимой вайфу у '
-                    f'{discord_id.global_name}\n{field_value}'
-                )
-
-            embed.add_field(
-                name=f'{number}. Имя: **{waifu.waifu_name_rus}**',
-                value=field_value,
-                inline=False
-            )
-
-        embed.set_footer(
-            text='Ты можешь добавить лейбл True Love '
-            'вызовом команды /true_love'
-        )
-
-        await interaction.followup.send(
-            embed=embed
+        await interaction.response.send_message(
+            'Выбери пользователя, вайфу которого ты хочешь посмотреть',
+            view=view,
+            ephemeral=True,
         )
 
     @app_commands.command(
