@@ -19,7 +19,7 @@ services:
             - 2333:2333
     
     discordbot:
-        image: vmstr8/discord-music-bot-amd64:type_here_version_of_the_bot
+        image: vmstr8/discord-music-bot:type-here-version-of-the-bot
         container_name: discordbot
         restart: unless-stopped
         depends_on:
