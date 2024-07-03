@@ -16,7 +16,7 @@
 ```yaml
 services:
     lavalink:
-        image: fredboat/lavalink:4.0.5
+        image: fredboat/lavalink:4.0.6
         container_name: lavalink
         restart: unless-stopped
         environment:
