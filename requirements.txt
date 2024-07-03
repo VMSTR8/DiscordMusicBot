@@ -17,6 +17,7 @@ filelock==3.12.2
 flake8==6.1.0
 flake8-variables-names==0.0.6
 frozenlist==1.4.0
+g4f==0.3.2.0
 idna==3.4
 iso8601==1.1.0
 mccabe==0.7.0
