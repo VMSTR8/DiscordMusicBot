@@ -229,7 +229,7 @@ class ServerUsers(discord.ui.UserSelect):
         )
 
         embed = discord.Embed(
-            title=f'Список вайфу {interaction.guild.me.display_name}',
+            title=f'Так, вот мой список вайфу',
             color=0x9966cc
         )
         embed.add_field(
@@ -314,7 +314,10 @@ class ServerUsers(discord.ui.UserSelect):
             return
 
         embed = discord.Embed(
-            title=f'Список вайфу {selected_user.display_name}', color=0x9966cc)
+            title=f'Список вайфу пользователя '
+            f'{selected_user.display_name}',
+            color=0x9966cc
+        )
 
         for number, waifu_link in enumerate(waifus, start=1):
             waifu = waifu_link.waifu
