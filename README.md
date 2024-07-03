@@ -12,7 +12,7 @@
 * Вопросы и предложения по боту можно направлять сюда: https://discord.gg/hk4QRyVXEY
 
 ## Как развернуть бота у себя
-Создайте `docker-compose.yml` со следующим содержимым (не забудьте заменить переменные):
+Создайте `docker-compose.yml` со следующим содержимым (не забудьте заменить переменные, пример файла можете [посмотреть тут](./docker-compose_example.yml)):
 ```yaml
 services:
     lavalink:
@@ -60,7 +60,7 @@ networks:
         name: lavalink
 ```
 
-Теперь создайте файл `application.yml`, он необходим для настроек Lavalink плагинов.
+Теперь создайте файл `application.yml`, он необходим для настроек Lavalink плагинов. Пример файла так же можете [посмотреть тут](./application_example.yml).
 ```yaml
 server:
   port: 2333
