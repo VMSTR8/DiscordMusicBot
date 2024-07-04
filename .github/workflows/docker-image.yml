@@ -37,7 +37,7 @@ jobs:
         with:
           username: ${{ secrets.DOCKERHUB_EMAIL }}
           password: ${{ secrets.DOCKERHUB_PASSWORD }}
-
+      - run: echo ${GITHUB_REF#refs/tags/}
       # - name: Extract metadata (tags, labels) for Docker
       #   id: meta
       #   uses: docker/metadata-action@v5
