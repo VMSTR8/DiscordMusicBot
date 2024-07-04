@@ -4,7 +4,7 @@
 
 Чат-бот, который умеет воспроизводить музыку, а так же работает с пользователями при входе участника на сервер. Умеет "регистрировать" на сервере, выдвая права в заданные голосовые каналы. Так как бот создается "тем еще виабушником" для использования на довольно небольшом сервере дискорда, поэтому основной функционал работы с пользователями построен на аниме-тематике.
 
-Стэк: [Python 3.10.8](https://www.python.org/doc/), [Discord.py 2.3.2](https://discordpy.readthedocs.io/en/stable/), [Wavelink 3.3.0](https://wavelink.dev/en/latest/), [Tortoise ORM 0.19.3](https://tortoise.github.io/index.html) [*(tutel!)*](https://youtu.be/oxzEdm29JLw), [Lavalink 4.0.5](https://github.com/lavalink-devs/Lavalink)
+Стэк: [Python 3.10.8](https://www.python.org/doc/), [Discord.py 2.4.0](https://discordpy.readthedocs.io/en/stable/), [Wavelink 3.4.0](https://wavelink.dev/en/latest/), [Tortoise ORM 0.19.3](https://tortoise.github.io/index.html) [*(tutel!)*](https://youtu.be/oxzEdm29JLw), [Lavalink 4.0.6](https://github.com/lavalink-devs/Lavalink)
 
 ## Важная информация
 * Бот не предназначен для добавления более чем на одном сервер дискорда, ибо я писал его исключительно под свой единственный серер. Разворачиваете бота у себя? Помните: один развернутый бот на один сервер.
@@ -12,11 +12,13 @@
 * Вопросы и предложения по боту можно направлять сюда: https://discord.gg/hk4QRyVXEY
 
 ## Как развернуть бота у себя
-Создайте `docker-compose.yml` со следующим содержимым (не забудьте заменить переменные):
+Создайте `docker-compose.yml` со следующим содержимым (не забудьте заменить переменные).
+
+Пример файла можете [посмотреть тут](./docker-compose_example.yml):
 ```yaml
 services:
     lavalink:
-        image: fredboat/lavalink:4.0.5
+        image: fredboat/lavalink:4.0.6
         container_name: lavalink
         restart: unless-stopped
         environment:
@@ -60,7 +62,7 @@ networks:
         name: lavalink
 ```
 
-Теперь создайте файл `application.yml`, он необходим для настроек Lavalink плагинов.
+Теперь создайте файл `application.yml`, он необходим для настроек Lavalink плагинов. Пример файла так же можете [посмотреть тут](./application_example.yml).
 ```yaml
 server:
   port: 2333

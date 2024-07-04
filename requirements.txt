@@ -12,7 +12,7 @@ charset-normalizer==3.2.0
 click==8.1.7
 decorator==5.1.1
 dictdiffer==0.9.0
-discord.py==2.3.2
+discord.py==2.4.0
 filelock==3.12.2
 flake8==6.1.0
 flake8-variables-names==0.0.6
@@ -35,6 +35,6 @@ tomlkit==0.12.1
 tortoise-orm==0.19.3
 typing_extensions==4.7.1
 urllib3==2.0.4
-wavelink==3.3.0
+wavelink==3.4.0
 websockets==11.0.3
 yarl==1.9.4
