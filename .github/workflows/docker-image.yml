@@ -1,16 +1,18 @@
 name: Docker Image CI main branch
 
 on:
-  push:
-    branches: [ "refactor/show-waifus-command" ]
-    paths-ignore:
-      - '.dockerignore'
-      - '.flake8'
-      - '.gitignore'
-      - 'LICENSE.md'
-      - 'README.md'
-      - 'README.ru.md'
-      - 'requirements.txt'
+  release:
+    types: [published]
+  # push:
+  #   branches: [ "refactor/show-waifus-command" ]
+  #   paths-ignore:
+  #     - '.dockerignore'
+  #     - '.flake8'
+  #     - '.gitignore'
+  #     - 'LICENSE.md'
+  #     - 'README.md'
+  #     - 'README.ru.md'
+  #     - 'requirements.txt'
 
 jobs:
   # flake:
@@ -134,13 +136,13 @@ jobs:
           username: ${{ secrets.DOCKERHUB_EMAIL }}
           password: ${{ secrets.DOCKERHUB_PASSWORD }}
 
-      - name: Extract metadata (tags, labels) for Docker
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: vmstr8/discord-music-bot
-          tags: |
-            type=sha,enable=true,priority=100,prefix=foot-,suffix=-fetish,format=short
+      # - name: Extract metadata (tags, labels) for Docker
+      #   id: meta
+      #   uses: docker/metadata-action@v5
+      #   with:
+      #     images: vmstr8/discord-music-bot
+      #     tags: |
+      #       type=sha,enable=true,priority=100,prefix=foot-,suffix=-fetish,format=short
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v3
@@ -151,5 +153,5 @@ jobs:
             linux/amd64
             linux/arm64
           no-cache: true
-          tags: ${{ steps.meta.outputs.tags }}
+          tags: ${{ GITHUB_REF }}
           labels: ${{ steps.meta.outputs.labels }}
