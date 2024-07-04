@@ -55,5 +55,5 @@ jobs:
             linux/amd64
             linux/arm64
           no-cache: true
-          tags: ${{ env.GITHUB_REF }}
+          tags: ${{ github.ref }}
           labels: ${{ steps.meta.outputs.labels }}
