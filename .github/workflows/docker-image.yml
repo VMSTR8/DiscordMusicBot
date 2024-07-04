@@ -2,7 +2,7 @@ name: Docker Image CI main branch
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "refactor/show-waifus-command" ]
     paths-ignore:
       - '.dockerignore'
       - '.flake8'
@@ -146,7 +146,7 @@ jobs:
         uses: docker/build-push-action@v3
         with:
           context: .
-          push: true
+          push: false
           platforms: |-
             linux/amd64
             linux/arm64
