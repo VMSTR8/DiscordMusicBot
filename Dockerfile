@@ -19,9 +19,9 @@ COPY entrypoint.sh /discordbot/entrypoint.sh
 RUN chmod +x /discordbot/entrypoint.sh
 
 # Проверка наличия файла плагина и его скачивание с GitHub при необходимости
-RUN if [ ! -f "/discordbot/plugins/youtube-plugin-1.3.0.jar" ]; then \
+RUN if [ ! -f "/discordbot/plugins/youtube-plugin-1.5.1.jar" ]; then \
     mkdir -p plugins && \
-    wget -O /discordbot/plugins/youtube-plugin-1.3.0.jar https://github.com/lavalink-devs/youtube-source/releases/download/1.3.0/youtube-plugin-1.3.0.jar; \
+    wget -O /discordbot/plugins/youtube-plugin-1.5.1.jar https://github.com/lavalink-devs/youtube-source/releases/download/1.5.1/youtube-plugin-1.5.1.jar; \
     fi
 
 # Создание нового образа, продолжая с предыдущей секции "stage"
