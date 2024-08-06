@@ -3,14 +3,18 @@ server:
   address: localhost
 lavalink:
   plugins:
-  - dependency: "dev.lavalink.youtube:youtube-plugin:1.3.0"
+  - dependency: "dev.lavalink.youtube:youtube-plugin:1.5.1"
     snapshot: false 
     youtube:
       enable: true
       allowSearch: true
       allowDirectVideoIds: true
       allowDirectPlaylistIds: true
-      clients: ["MUSIC", "ANDROID", "WEB"]
+      clients:
+        - MUSIC
+        - ANDROID_TESTSUITE
+        - WEB
+        - TVHTML5EMBEDDED
   server:
     password: "myveryhardpassword"
     sources:
