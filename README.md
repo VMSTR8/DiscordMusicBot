@@ -8,7 +8,7 @@
 
 ## Важная информация
 * Бот не предназначен для добавления более чем на одном сервер дискорда, ибо я писал его исключительно под свой единственный серер. Разворачиваете бота у себя? Помните: один развернутый бот на один сервер.
-* Допустим, вам нужен просто музыкальный чат-бот. Ненужные команды можно отключить прямиком у вас на сервере в разделе настройки сервере->интеграция->выбрать бота и нажать "управление". 
+* Допустим, вам нужен просто музыкальный чат-бот. Ненужные команды можно отключить прямиком у вас на сервере в разделе Настройки сервера->Интеграция->выбрать бота и нажать "Управление". 
 * Вопросы и предложения по боту можно направлять сюда: https://discord.gg/hk4QRyVXEY
 
 ## Как развернуть бота у себя
@@ -18,7 +18,7 @@
 ```yaml
 services:
     lavalink:
-        image: fredboat/lavalink:4.0.6
+        image: fredboat/lavalink:4.0.7
         container_name: lavalink
         restart: unless-stopped
         environment:
@@ -69,14 +69,18 @@ server:
   address: localhost
 lavalink:
   plugins:
-  - dependency: "dev.lavalink.youtube:youtube-plugin:1.3.0"
+  - dependency: "dev.lavalink.youtube:youtube-plugin:1.5.1"
     snapshot: false 
     youtube:
       enable: true
       allowSearch: true
       allowDirectVideoIds: true
       allowDirectPlaylistIds: true
-      clients: ["MUSIC", "ANDROID", "WEB"]
+      clients:
+        - MUSIC
+        - ANDROID_TESTSUITE
+        - WEB
+        - TVHTML5EMBEDDED
   server:
     password: "тут_пишите_пароль_от_лавалинка"
     sources:
