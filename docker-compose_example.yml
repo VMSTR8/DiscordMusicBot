@@ -1,6 +1,6 @@
 services:
     lavalink:
-        image: fredboat/lavalink:4.0.6
+        image: fredboat/lavalink:4.0.7
         container_name: lavalink
         restart: unless-stopped
         environment:
@@ -19,7 +19,7 @@ services:
             - 2333:2333
     
     discordbot:
-        image: vmstr8/discord-music-bot:type-here-version-of-the-bot
+        image: vmstr8/discord-music-bot:latest
         container_name: discordbot
         restart: unless-stopped
         depends_on:
