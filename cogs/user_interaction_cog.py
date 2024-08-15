@@ -488,11 +488,6 @@ class UserInteractionCog(commands.Cog):
         Returns:
             None
         """
-        if len(urls) != 5:
-            await interaction.followup.send(
-                USER_INTERACTION_ANSWERS['url_len_err']
-            )
-            return
 
         valid_urls = []
         for url in urls:
@@ -627,14 +622,25 @@ class UserInteractionCog(commands.Cog):
 
     @app_commands.command(
         name='grant_permission',
-        description='Отправить список из 5 вайфу с сайта '
+        description='Отправить 5 ссылок на вайфу с сайта '
         'shikimori.one для получения доступа в голосовые каналы'
     )
     @app_commands.describe(
         role='Напиши название своей роли, '
         'которую я создам и присвою тебе',
-        shikimori_urls='Ссылки на 5 вайфу с сайта '
-        'shikimori.one через запятую'
+        first_url='Ссылка на 1-ю вайфу c https://shikimori.one/characters',
+        second_url='Ссылка на 2-ю вайфу c https://shikimori.one/characters',
+        third_url='Ссылка на 3-ю вайфу c https://shikimori.one/characters',
+        fourth_url='Ссылка на 4-ю вайфу c https://shikimori.one/characters',
+        fifth_url='Ссылка на 5-ю вайфу c https://shikimori.one/characters'
+    )
+    @app_commands.rename(
+        role='название_роли',
+        first_url='первая_вайфу',
+        second_url='вторая_вайфу',
+        third_url='третья_вайфу',
+        fourth_url='четвертая_вайфу',
+        fifth_url='пятая_вайфу'
     )
     @commands.guild_only()
     async def grant_permission(
@@ -642,7 +648,12 @@ class UserInteractionCog(commands.Cog):
             interaction: Interaction,
             role: str,
             *,
-            shikimori_urls: str) -> None:
+            first_url: str,
+            second_url: str,
+            third_url: str,
+            fourth_url: str,
+            fifth_url: str
+    ) -> None:
         """
         Command to request granting permission to access
         voice channels by submitting a list
@@ -683,7 +694,15 @@ class UserInteractionCog(commands.Cog):
             )
             return
 
-        urls = [url.strip() for url in shikimori_urls.split(',')]
+        urls = [
+            url.strip() for url in [
+                first_url,
+                second_url,
+                third_url,
+                fourth_url,
+                fifth_url
+            ]
+        ]
         await self.checks_before_grant_permission(
             interaction=interaction,
             role=role,
@@ -887,11 +906,13 @@ class UserInteractionCog(commands.Cog):
     )
     @app_commands.describe(
         role_name='Подтверди смену цвета, '
-        'написав сюда название своей роли'
-    )
-    @app_commands.describe(
+        'написав сюда название своей роли',
         color='Напиши сюда HEX код цвета, '
         'например: #9966CC'
+    )
+    @app_commands.rename(
+        role_name='название_роли',
+        color='цвет_роли'
     )
     @commands.guild_only()
     async def change_role_color(
@@ -985,11 +1006,13 @@ class UserInteractionCog(commands.Cog):
     )
     @app_commands.describe(
         old_role_name='Подтверди изменение, '
-        'написав сюда название своей роли'
-    )
-    @app_commands.describe(
+        'написав сюда название своей роли',
         new_role_name='Напиши сюда новое название '
         'своей роли'
+    )
+    @app_commands.rename(
+        old_role_name='текущее_название_роли',
+        new_role_name='новое_название_роли'
     )
     @commands.guild_only()
     async def change_role_name(
