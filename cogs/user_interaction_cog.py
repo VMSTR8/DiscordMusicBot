@@ -501,7 +501,11 @@ class UserInteractionCog(commands.Cog):
                 )
                 return
 
-        if len(valid_urls) != len(set(valid_urls)):
+        character_id_unique = [
+            re.search(self.shikimore_chars, url).group(2)
+            for url in valid_urls
+        ]
+        if len(character_id_unique) != len(set(character_id_unique)):
             await interaction.followup.send(
                 USER_INTERACTION_ANSWERS['unique_waifu_err']
             )
