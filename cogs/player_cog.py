@@ -400,7 +400,10 @@ class PlayerCog(commands.Cog):
         description='Воспроизведение/добавление в очередь музыки',
     )
     @app_commands.describe(
-        song='Напиши название песни или отправь ссылку на песню!'
+        song='Напиши название трека или отправь ссылку на трек!'
+    )
+    @app_commands.rename(
+        song='трек'
     )
     @commands.guild_only()
     @play_check()

@@ -31,6 +31,11 @@ class AdminCog(commands.Cog):
         message_id='[Опционально] Вставь сюда ID сообщения, '
         'которое бот должен переслать'
     )
+    @app_commands.rename(
+        channel_id='id_канала',
+        message='сообщение',
+        message_id='id_сообщения'
+    )
     @commands.guild_only()
     @app_commands.checks.has_permissions(administrator=True)
     async def send_message(
@@ -130,6 +135,11 @@ class AdminCog(commands.Cog):
         'который заменит текст существубщего сообщения',
         message_id='[Опционально] Вставь сюда ID сообщения, '
         'из которого бот скопирует текст'
+    )
+    @app_commands.rename(
+        edit_message_id='id_редактируемого_сообщения',
+        message='новое_сообщение',
+        message_id='id_сообщения'
     )
     @commands.guild_only()
     @app_commands.checks.has_permissions(administrator=True)
