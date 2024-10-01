@@ -3,18 +3,23 @@ server:
   address: localhost
 lavalink:
   plugins:
-  - dependency: "dev.lavalink.youtube:youtube-plugin:1.5.1"
-    snapshot: false 
-    youtube:
-      enable: true
-      allowSearch: true
-      allowDirectVideoIds: true
-      allowDirectPlaylistIds: true
-      clients:
-        - MUSIC
-        - ANDROID_TESTSUITE
-        - WEB
-        - TVHTML5EMBEDDED
+    - dependency: "dev.lavalink.youtube:youtube-plugin:1.5.1"
+      snapshot: false
+      youtube:
+        enable: true
+        allowSearch: true
+        allowDirectVideoIds: true
+        allowDirectPlaylistIds: true
+        clients:
+          - WEB
+          - MUSIC
+          - TVHTML5EMBEDDED
+          - ANDROID_MUSIC
+          - WEBEMBEDDED
+          - ANDROID
+          - ANDROID_LITE
+          - MEDIA_CONNECT
+          - IOS
   server:
     password: "myveryhardpassword"
     sources:
