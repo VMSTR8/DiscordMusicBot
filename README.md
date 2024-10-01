@@ -4,7 +4,7 @@
 
 Чат-бот, который умеет воспроизводить музыку, а так же работает с пользователями при входе участника на сервер. Умеет "регистрировать" на сервере, выдвая права в заданные голосовые каналы. Так как бот создается "тем еще виабушником" для использования на довольно небольшом сервере дискорда, поэтому основной функционал работы с пользователями построен на аниме-тематике.
 
-Стэк: [Python 3.10.8](https://www.python.org/doc/), [Discord.py 2.4.0](https://discordpy.readthedocs.io/en/stable/), [Wavelink 3.4.0](https://wavelink.dev/en/latest/), [Tortoise ORM 0.19.3](https://tortoise.github.io/index.html) [*(tutel!)*](https://youtu.be/oxzEdm29JLw), [Lavalink 4.0.7](https://github.com/lavalink-devs/Lavalink)
+Стэк: [Python 3.10.8](https://www.python.org/doc/), [Discord.py 2.4.0](https://discordpy.readthedocs.io/en/stable/), [Wavelink 3.4.0](https://wavelink.dev/en/latest/), [Tortoise ORM 0.19.3](https://tortoise.github.io/index.html) [*(tutel!)*](https://youtu.be/oxzEdm29JLw), [Lavalink 4.0.8](https://github.com/lavalink-devs/Lavalink)
 
 ## Важная информация
 * Бот не предназначен для добавления более чем на одном сервер дискорда, ибо я писал его исключительно под свой единственный серер. Разворачиваете бота у себя? Помните: один развернутый бот на один сервер.
@@ -18,7 +18,7 @@
 ```yaml
 services:
     lavalink:
-        image: fredboat/lavalink:4.0.7
+        image: fredboat/lavalink:4.0.8
         container_name: lavalink
         restart: unless-stopped
         environment:
@@ -69,7 +69,7 @@ server:
   address: localhost
 lavalink:
   plugins:
-  - dependency: "dev.lavalink.youtube:youtube-plugin:1.5.1"
+  - dependency: "dev.lavalink.youtube:youtube-plugin:1.8.3"
     snapshot: false 
     youtube:
       enable: true
@@ -77,10 +77,15 @@ lavalink:
       allowDirectVideoIds: true
       allowDirectPlaylistIds: true
       clients:
-        - MUSIC
-        - ANDROID_TESTSUITE
         - WEB
+        - MUSIC
         - TVHTML5EMBEDDED
+        - ANDROID_MUSIC
+        - WEBEMBEDDED
+        - ANDROID
+        - ANDROID_LITE
+        - MEDIA_CONNECT
+        - IOS
   server:
     password: "тут_пишите_пароль_от_лавалинка"
     sources:
