@@ -3,7 +3,7 @@ server:
   address: localhost
 lavalink:
   plugins:
-    - dependency: "dev.lavalink.youtube:youtube-plugin:1.5.1"
+    - dependency: "dev.lavalink.youtube:youtube-plugin:1.8.3"
       snapshot: false
       youtube:
         enable: true
