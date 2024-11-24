@@ -400,7 +400,7 @@ class PlayerCog(commands.Cog):
         description='Воспроизведение/добавление в очередь музыки',
     )
     @app_commands.describe(
-        song='Напиши название трека или отправь ссылку на трек!'
+        song='Напиши название трека или отправь ссылку (Yandex, Soundcloud, Bandcamp) на трек!'
     )
     @app_commands.rename(
         song='трек'
@@ -424,7 +424,10 @@ class PlayerCog(commands.Cog):
         destination = interaction.user.voice.channel
 
         try:
-            tracks: wavelink.Search = await wavelink.Playable.search(song)
+            tracks: wavelink.Search = await wavelink.Playable.search(
+                song,
+                source='ymsearch:'
+            )
             if not tracks:
                 await interaction.response.send_message(
                     'К сожалению, я не смогла ничего найти :(',
