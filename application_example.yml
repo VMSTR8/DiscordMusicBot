@@ -1,27 +1,26 @@
+plugins:
+  lavasrc:
+    providers:
+      - "ymrec:\"%ISRC%\""
+      - "ymsearch:%QUERY%"
+    sources:
+      youtube: false
+      yandexmusic: true
+    yandexmusic:
+      accessToken: "токен_яндекс_музыки"
+      playlistLoadLimit: 1
+      albumLoadLimit: 1
+      artistLoadLimit: 1
+
 server:
   port: 2333
   address: localhost
 lavalink:
   plugins:
-    - dependency: "dev.lavalink.youtube:youtube-plugin:1.8.3"
+    - dependency: "com.github.topi314.lavasrc:lavasrc-plugin:4.3.0"
       snapshot: false
-      youtube:
-        enable: true
-        allowSearch: true
-        allowDirectVideoIds: true
-        allowDirectPlaylistIds: true
-        clients:
-          - WEB
-          - MUSIC
-          - TVHTML5EMBEDDED
-          - ANDROID_MUSIC
-          - WEBEMBEDDED
-          - ANDROID
-          - ANDROID_LITE
-          - MEDIA_CONNECT
-          - IOS
   server:
-    password: "myveryhardpassword"
+    password: "пароль_вашего_лавалинка"
     sources:
       youtube: false
       soundcloud: true
